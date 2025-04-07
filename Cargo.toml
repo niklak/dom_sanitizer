@@ -8,3 +8,4 @@ repository = "https://github.com/niklak/dom_sanitizer"
 authors = ["niklak <morgenpurple@gmail.com>"]
 
 [dependencies]
+dom_query = {version = "0.17.0"}
