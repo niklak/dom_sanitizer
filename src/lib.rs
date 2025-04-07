@@ -1,3 +1,3 @@
 mod policy;
 
-pub use policy::{AttributeRule, Directive, Policy};
+pub use policy::{AttributeRule, Policy, PermissivePolicy, RestrictivePolicy};
