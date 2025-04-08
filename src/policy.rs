@@ -1,5 +1,7 @@
 use dom_query::{Document, NodeRef};
 
+use crate::builder::PolicyBuilder;
+
 //// A trait for sanitization directives, defines methods for node and attribute sanitization.
 pub trait SanitizeDirective {
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef)
@@ -110,11 +112,21 @@ pub struct AttributeRule<'a> {
     pub attributes: Vec<&'a str>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Policy<'a, T: SanitizeDirective = Permissive> {
     pub attr_rules: Vec<AttributeRule<'a>>,
     pub element_rules: Vec<&'a str>,
     pub(crate) _directive: std::marker::PhantomData<T>,
+}
+
+impl<'a, T: SanitizeDirective> Default for Policy<'a, T> {
+    fn default() -> Self {
+        Self {
+            attr_rules: Vec::new(),
+            element_rules: Vec::new(),
+            _directive: std::marker::PhantomData,
+        }
+    }
 }
 
 impl<T: SanitizeDirective> Policy<'_, T> {
@@ -128,6 +140,7 @@ impl<T: SanitizeDirective> Policy<'_, T> {
 }
 
 impl<T: SanitizeDirective> Policy<'_, T> {
+    
     fn exclusive_attrs(&self, node: &NodeRef) -> Vec<&str> {
         let Some(qual_name) = node.qual_name_ref() else {
             return vec![];
@@ -145,6 +158,19 @@ impl<T: SanitizeDirective> Policy<'_, T> {
         }
         attrs
     }
+}
+
+impl<'a, T: SanitizeDirective> Policy<'a, T> {
+    /// Creates a new [`PolicyBuilder`] with default values.
+    pub fn builder() -> PolicyBuilder<'a, T> {
+        PolicyBuilder::new()
+    }
+
+    /// Creates a new [`Policy`] with default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
+    
 }
 
 pub type PermissivePolicy<'a> = Policy<'a, Permissive>;
