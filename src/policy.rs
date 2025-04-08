@@ -1,11 +1,13 @@
 use dom_query::{Document, NodeRef};
 
+//// A trait for sanitization directives, defines methods for node and attribute sanitization.
 pub trait SanitizeDirective {
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) where Self: Sized;
     fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef) where Self: Sized;
 }
 
-/// A base sanitization directive, which allows all elements and attributes, excluding listed in policy.
+/// A base sanitization directive, which allows all elements and attributes,
+/// excluding listed in policy.
 #[derive(Debug, Clone, Copy)]
 pub struct Permissive;
 
@@ -52,7 +54,8 @@ impl SanitizeDirective for Permissive {
 }
 
 
-/// A base sanitization directive, which restricts all elements and attributes, excluding listed in policy.
+/// A base sanitization directive, which restricts all elements and attributes,
+/// excluding listed in policy.
 #[derive(Debug, Clone, Copy)]
 pub struct Restrictive;
 
