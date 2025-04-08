@@ -2,6 +2,8 @@ use dom_query::{Document, NodeRef};
 
 use crate::builder::PolicyBuilder;
 
+static ALWAYS_SKIP: &[&str] = &["html", "head", "body"];
+
 //// A trait for sanitization directives, defines methods for node and attribute sanitization.
 pub trait SanitizeDirective {
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef)
@@ -41,7 +43,6 @@ impl SanitizeDirective for Permissive {
                     child_node.insert_siblings_before(&first_inline);
                 };
                 child_node.remove_from_parent();
-                continue;
             }
             Self::sanitize_node_attr(policy, child_node);
             child = next_node;
@@ -81,9 +82,11 @@ impl SanitizeDirective for Restrictive {
                 continue;
             }
             if child_node.qual_name_ref().map_or(false, |name| {
-                policy.element_rules.contains(&name.local.as_ref())
+                let local_name = name.local.as_ref();
+                ALWAYS_SKIP.contains(&local_name) || policy.element_rules.contains(&local_name)
             }) {
                 Self::sanitize_node_attr(policy, child_node);
+                child = next_node;
                 continue;
             }
 
@@ -140,7 +143,6 @@ impl<T: SanitizeDirective> Policy<'_, T> {
 }
 
 impl<T: SanitizeDirective> Policy<'_, T> {
-    
     fn exclusive_attrs(&self, node: &NodeRef) -> Vec<&str> {
         let Some(qual_name) = node.qual_name_ref() else {
             return vec![];
@@ -170,7 +172,6 @@ impl<'a, T: SanitizeDirective> Policy<'a, T> {
     pub fn new() -> Self {
         Self::default()
     }
-    
 }
 
 pub type PermissivePolicy<'a> = Policy<'a, Permissive>;
