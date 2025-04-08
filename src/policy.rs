@@ -2,8 +2,12 @@ use dom_query::{Document, NodeRef};
 
 //// A trait for sanitization directives, defines methods for node and attribute sanitization.
 pub trait SanitizeDirective {
-    fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) where Self: Sized;
-    fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef) where Self: Sized;
+    fn sanitize_node(policy: &Policy<Self>, node: &NodeRef)
+    where
+        Self: Sized;
+    fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef)
+    where
+        Self: Sized;
 }
 
 /// A base sanitization directive, which allows all elements and attributes,
@@ -41,7 +45,7 @@ impl SanitizeDirective for Permissive {
             child = next_node;
         }
     }
-    
+
     fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef) {
         if policy.attr_rules.is_empty() {
             return;
@@ -49,10 +53,8 @@ impl SanitizeDirective for Permissive {
 
         let attrs = policy.exclusive_attrs(node);
         node.remove_attrs(&attrs);
-
     }
 }
-
 
 /// A base sanitization directive, which restricts all elements and attributes,
 /// excluding listed in policy.
@@ -102,7 +104,6 @@ impl SanitizeDirective for Restrictive {
     }
 }
 
-
 #[derive(Debug, Clone, Default)]
 pub struct AttributeRule<'a> {
     pub element: Option<&'a str>,
@@ -113,10 +114,10 @@ pub struct AttributeRule<'a> {
 pub struct Policy<'a, T: SanitizeDirective = Permissive> {
     pub attr_rules: Vec<AttributeRule<'a>>,
     pub element_rules: Vec<&'a str>,
-    _directive: std::marker::PhantomData<T>,
+    pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
-impl <T: SanitizeDirective>Policy<'_, T> {
+impl<T: SanitizeDirective> Policy<'_, T> {
     pub fn sanitize_node(&self, node: &dom_query::NodeRef) {
         T::sanitize_node(self, node);
     }
@@ -126,7 +127,7 @@ impl <T: SanitizeDirective>Policy<'_, T> {
     }
 }
 
-impl <T: SanitizeDirective>Policy<'_, T> {
+impl<T: SanitizeDirective> Policy<'_, T> {
     fn exclusive_attrs(&self, node: &NodeRef) -> Vec<&str> {
         let Some(qual_name) = node.qual_name_ref() else {
             return vec![];
