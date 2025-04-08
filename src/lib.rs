@@ -1,4 +1,9 @@
-mod policy;
+mod builder;
 mod ext;
-pub use policy::{AttributeRule, Policy, PermissivePolicy, RestrictivePolicy};
+mod policy;
+
+pub use builder::PolicyBuilder;
 pub use ext::SanitizeExt;
+pub use policy::{AttributeRule, Policy};
+pub use policy::{Permissive, Restrictive};
+pub use policy::{PermissivePolicy, RestrictivePolicy};
