@@ -53,6 +53,7 @@ impl SanitizeDirective for Permissive {
             Self::sanitize_node_attr(policy, child_node);
             child = next_node;
         }
+        node.normalize();
     }
 
     /// Removes matching attributes from the element node.
@@ -103,6 +104,7 @@ impl SanitizeDirective for Restrictive {
             child_node.remove_from_parent();
             child = next_node;
         }
+        node.normalize();
     }
 
     /// Removes all attributes from the element node with exception of
