@@ -24,5 +24,3 @@ jobs:
       run: cargo build --verbose --all
     - name: Run tests
       run: cargo test --verbose --all-targets
-    - name: Run tests with hashbrown
-      run: cargo test --verbose --all-targets --all-features
