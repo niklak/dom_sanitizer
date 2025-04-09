@@ -15,8 +15,8 @@ use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
 /// # Examples
 ///
 /// ```rust
-/// use crate::builder::PolicyBuilder;
-/// use crate::policy::{Permissive, Restrictive};
+/// use dom_sanitizer::PolicyBuilder;
+/// use dom_sanitizer::{Permissive, Restrictive};
 ///
 /// let allow_policy = PolicyBuilder::<Permissive>::new()
 ///     .exclude_elements(&["script", "style"])
@@ -70,7 +70,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     pub fn exclude_attrs(mut self, attrs: &'a [&str]) -> Self {
         let rule = AttributeRule {
             element: None,
-            attributes: attrs.to_vec(),
+            attributes: attrs,
         };
         self.attr_rules.push(rule);
         self
@@ -83,7 +83,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     pub fn exclude_element_attrs(mut self, element: &'a str, attrs: &'a [&str]) -> Self {
         let rule = AttributeRule {
             element: Some(element),
-            attributes: attrs.to_vec(),
+            attributes: attrs,
         };
         self.attr_rules.push(rule);
         self
