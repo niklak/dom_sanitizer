@@ -32,9 +32,9 @@ use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
 /// ```
 pub struct PolicyBuilder<'a, T: SanitizeDirective = Permissive> {
     /// A list of rules for excluding attributes.
-    pub attr_rules: Vec<AttributeRule<'a>>,
+    attr_rules: Vec<AttributeRule<'a>>,
     /// A list of rules for excluding elements.
-    pub element_rules: Vec<&'a str>,
+    element_rules: Vec<&'a str>,
     _directive: std::marker::PhantomData<T>,
 }
 

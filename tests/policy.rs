@@ -22,6 +22,10 @@ fn test_restrictive_policy() {
     policy.sanitize_document(&doc);
     assert!(!doc.select("div").exists());
     assert_eq!(doc.select("p > a").length(), 3);
+
+    assert!(doc.select("html").exists());
+    assert!(doc.select("head").exists());
+    assert!(doc.select("body").exists());
 }
 
 #[test]
@@ -31,4 +35,9 @@ fn test_permissive_policy() {
     policy.sanitize_document(&doc);
     assert!(!doc.select("div").exists());
     assert_eq!(doc.select("p > a").length(), 3);
+
+    // html, head, body are always kept
+    assert!(doc.select("html").exists());
+    assert!(doc.select("head").exists());
+    assert!(doc.select("body").exists());
 }
