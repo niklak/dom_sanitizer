@@ -2,6 +2,8 @@ use dom_query::{Document, NodeRef};
 
 use crate::builder::PolicyBuilder;
 
+/// Elements that should never be removed during sanitization, as they are
+/// fundamental to the document structure.
 static ALWAYS_SKIP: &[&str] = &["html", "head", "body"];
 
 /// A trait for sanitization directives, defines methods for node and attribute sanitization.
@@ -133,8 +135,12 @@ pub struct AttributeRule<'a> {
 #[derive(Debug, Clone)]
 pub struct Policy<'a, T: SanitizeDirective = Permissive> {
     /// The list of excluding rules for attributes.
+    /// For [Permissive] directive: attributes to remove
+    /// For [Restrictive] directive: attributes to keep
     pub attr_rules: Vec<AttributeRule<'a>>,
     /// The list of excluding rules for elements.
+    /// For [Permissive] directive: elements to remove
+    /// For [Restrictive] directive: elements to keep
     pub element_rules: Vec<&'a str>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
@@ -150,10 +156,14 @@ impl<T: SanitizeDirective> Default for Policy<'_, T> {
 }
 
 impl<T: SanitizeDirective> Policy<'_, T> {
+    /// Sanitizes a node by applying the policy rules according to the directive type.
+    /// 
+    /// For [Permissive] directive: Removes elements and attributes specified in the policy.
+    /// For [Restrictive] directive: Keeps only elements and attributes specified in the policy.
     pub fn sanitize_node(&self, node: &dom_query::NodeRef) {
         T::sanitize_node(self, node);
     }
-
+    /// Sanitizes the attributes of a node by applying the policy rules according to the directive type.
     pub fn sanitize_document(&self, document: &Document) {
         self.sanitize_node(&document.root());
     }
