@@ -26,9 +26,7 @@ fn test_restrictive_policy() {
 
 #[test]
 fn test_permissive_policy() {
-    let policy = AllowAllPolicy::builder()
-        .exclude_elements(&["div"])
-        .build();
+    let policy = AllowAllPolicy::builder().exclude_elements(&["div"]).build();
     let doc = Document::from(PARAGRAPH_CONTENTS);
     policy.sanitize_document(&doc);
     assert!(!doc.select("div").exists());
