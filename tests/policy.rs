@@ -1,12 +1,11 @@
 use dom_query::Document;
-use dom_sanitizer::{AllowAllPolicy, DenyAllPolicy};
+use dom_sanitizer::{AllowAllPolicy, DenyAllPolicy, SanitizeExt};
 
 static PARAGRAPH_CONTENTS: &str = r#"
 <!DOCTYPE html>
 <html>
     <head><title>Test</title></head>
     <body>
-        <!--Paragraphs-->
         <div><p role="paragraph">The first paragraph contains <a href="/first" role="link">the first link</a>.</p></div>
         <div><p role="paragraph">The second paragraph contains <a href="/second" role="link">the second link</a>.</p></div>
         <div><p role="paragraph">The third paragraph contains <a href="/third" role="link">the third link</a>.</p></div>
@@ -68,4 +67,38 @@ fn test_permissive_policy_attrs() {
     assert_eq!(doc.select("p").length(), 3);
     assert_eq!(doc.select("p[role]").length(), 0);
     assert_eq!(doc.select("p > a[href][role]").length(), 3);
+}
+
+#[test]
+fn test_restrictive_policy_simple() {
+    let policy = DenyAllPolicy::new();
+    let doc = Document::from(PARAGRAPH_CONTENTS);
+    doc.root().sanitize(&policy);
+    assert!(!doc.select("div").exists());
+    assert!(!doc.select("p").exists());
+    assert!(!doc.select("a").exists());
+
+    assert!(doc.select("html").exists());
+    assert!(doc.select("head").exists());
+
+    let body_sel = doc.select("body");
+    assert_eq!(body_sel.length(), 1);
+    let body_node = body_sel.nodes().first().unwrap();
+
+    // only one combined (normalized) text node is left
+    assert_eq!(body_node.descendants().len(), 1);
+}
+
+#[test]
+fn test_permissive_policy_simple() {
+    let policy = AllowAllPolicy::new();
+    let doc = Document::from(PARAGRAPH_CONTENTS);
+    doc.sanitize(&policy);
+
+    assert!(doc.select("html").exists());
+    assert!(doc.select("head").exists());
+    assert!(doc.select("body").exists());
+    assert!(doc.select("div").exists());
+    assert!(doc.select("p").exists());
+    assert!(doc.select("a").exists());
 }
