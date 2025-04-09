@@ -127,7 +127,7 @@ pub struct AttributeRule<'a> {
     /// If `None`, the rule applies to all elements.
     pub element: Option<&'a str>,
     /// The list of attribute keys
-    pub attributes: Vec<&'a str>,
+    pub attributes: &'a [&'a str],
 }
 
 #[derive(Debug, Clone)]
