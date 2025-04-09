@@ -77,10 +77,6 @@ impl SanitizeDirective for Restrictive {
     /// Removes attributes from the element node with exception of
     /// attributes listed in policy.
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
-        if policy.element_rules.is_empty() && policy.attr_rules.is_empty() {
-            return;
-        }
-
         let mut child = node.first_child();
 
         while let Some(ref child_node) = child {
@@ -157,7 +153,7 @@ impl<T: SanitizeDirective> Default for Policy<'_, T> {
 
 impl<T: SanitizeDirective> Policy<'_, T> {
     /// Sanitizes a node by applying the policy rules according to the directive type.
-    /// 
+    ///
     /// For [Permissive] directive: Removes elements and attributes specified in the policy.
     /// For [Restrictive] directive: Keeps only elements and attributes specified in the policy.
     pub fn sanitize_node(&self, node: &dom_query::NodeRef) {
