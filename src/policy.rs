@@ -53,7 +53,6 @@ impl SanitizeDirective for Permissive {
             Self::sanitize_node_attr(policy, child_node);
             child = next_node;
         }
-        node.normalize();
     }
 
     /// Removes matching attributes from the element node.
@@ -104,7 +103,6 @@ impl SanitizeDirective for Restrictive {
             child_node.remove_from_parent();
             child = next_node;
         }
-        node.normalize();
     }
 
     /// Removes all attributes from the element node with exception of
@@ -160,6 +158,7 @@ impl<T: SanitizeDirective> Policy<'_, T> {
     /// For [Restrictive] directive: Keeps only elements and attributes specified in the policy.
     pub fn sanitize_node(&self, node: &dom_query::NodeRef) {
         T::sanitize_node(self, node);
+        node.normalize();
     }
     /// Sanitizes the attributes of a node by applying the policy rules according to the directive type.
     pub fn sanitize_document(&self, document: &Document) {
