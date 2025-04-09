@@ -4,11 +4,13 @@ use crate::builder::PolicyBuilder;
 
 static ALWAYS_SKIP: &[&str] = &["html", "head", "body"];
 
-//// A trait for sanitization directives, defines methods for node and attribute sanitization.
+/// A trait for sanitization directives, defines methods for node and attribute sanitization.
 pub trait SanitizeDirective {
+    /// Sanitizes a node by removing elements and attributes based on the policy.
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef)
     where
         Self: Sized;
+    /// Sanitizes the attributes of a node by removing or retaining them based on the policy.
     fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef)
     where
         Self: Sized;
@@ -20,6 +22,8 @@ pub trait SanitizeDirective {
 pub struct Permissive;
 
 impl SanitizeDirective for Permissive {
+    /// Removes matching elements from the DOM keeping their children.
+    /// Removes matching attributes from the element node.
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
         if policy.element_rules.is_empty() && policy.attr_rules.is_empty() {
             return;
@@ -49,6 +53,7 @@ impl SanitizeDirective for Permissive {
         }
     }
 
+    /// Removes matching attributes from the element node.
     fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef) {
         if policy.attr_rules.is_empty() {
             return;
@@ -65,6 +70,10 @@ impl SanitizeDirective for Permissive {
 pub struct Restrictive;
 
 impl SanitizeDirective for Restrictive {
+    /// Removes elements from the DOM keeping their children with exception of
+    /// elements listed in policy.
+    /// Removes attributes from the element node with exception of
+    /// attributes listed in policy.
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
         if policy.element_rules.is_empty() && policy.attr_rules.is_empty() {
             return;
@@ -98,6 +107,8 @@ impl SanitizeDirective for Restrictive {
         }
     }
 
+    /// Removes all attributes from the element node with exception of
+    /// attributes listed in policy.
     fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef) {
         if policy.attr_rules.is_empty() {
             node.remove_all_attrs();
@@ -109,20 +120,26 @@ impl SanitizeDirective for Restrictive {
     }
 }
 
+/// An **excluding** rule for sanitizing attributes of a specific element.
 #[derive(Debug, Clone, Default)]
 pub struct AttributeRule<'a> {
+    /// The name of the element to which this rule applies.
+    /// If `None`, the rule applies to all elements.
     pub element: Option<&'a str>,
+    /// The list of attribute keys
     pub attributes: Vec<&'a str>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Policy<'a, T: SanitizeDirective = Permissive> {
+    /// The list of excluding rules for attributes.
     pub attr_rules: Vec<AttributeRule<'a>>,
+    /// The list of excluding rules for elements.
     pub element_rules: Vec<&'a str>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
-impl<'a, T: SanitizeDirective> Default for Policy<'a, T> {
+impl<T: SanitizeDirective> Default for Policy<'_, T> {
     fn default() -> Self {
         Self {
             attr_rules: Vec::new(),
@@ -174,12 +191,12 @@ impl<'a, T: SanitizeDirective> Policy<'a, T> {
     }
 }
 
-/// An alias for [`Policy`] with [`Permissive`] directive.
+/// Alias for [`Policy`] using the [`Permissive`] directive (default-allow behavior).
 pub type PermissivePolicy<'a> = Policy<'a, Permissive>;
-/// An alias for [`Policy`] with [`Permissive`] directive.
+/// Alias for [`PermissivePolicy`] — allows all elements and attributes by default.
 pub type AllowAllPolicy<'a> = Policy<'a, Permissive>;
 
-/// An alias for [`Policy`] with [`Restrictive`] directive.
+/// Alias for [`Policy`] using the [`Restrictive`] directive (default-deny behavior).
 pub type RestrictivePolicy<'a> = Policy<'a, Restrictive>;
-/// An alias for [`Policy`] with [`Restrictive`] directive.
+/// Alias for [`RestrictivePolicy`] — denies all elements and attributes by default.
 pub type DenyAllPolicy<'a> = Policy<'a, Restrictive>;
