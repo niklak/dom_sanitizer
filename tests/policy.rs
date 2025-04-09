@@ -1,5 +1,5 @@
 use dom_query::Document;
-use dom_sanitizer::{PermissivePolicy, RestrictivePolicy};
+use dom_sanitizer::{AllowAllPolicy, DenyAllPolicy};
 
 static PARAGRAPH_CONTENTS: &str = r#"
 <!DOCTYPE html>
@@ -15,7 +15,7 @@ static PARAGRAPH_CONTENTS: &str = r#"
 
 #[test]
 fn test_restrictive_policy() {
-    let policy = RestrictivePolicy::builder()
+    let policy = DenyAllPolicy::builder()
         .exclude_elements(&["p", "a"])
         .build();
     let doc = Document::from(PARAGRAPH_CONTENTS);
@@ -26,7 +26,7 @@ fn test_restrictive_policy() {
 
 #[test]
 fn test_permissive_policy() {
-    let policy = PermissivePolicy::builder()
+    let policy = AllowAllPolicy::builder()
         .exclude_elements(&["div"])
         .build();
     let doc = Document::from(PARAGRAPH_CONTENTS);

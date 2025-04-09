@@ -174,5 +174,12 @@ impl<'a, T: SanitizeDirective> Policy<'a, T> {
     }
 }
 
+/// An alias for [`Policy`] with [`Permissive`] directive.
 pub type PermissivePolicy<'a> = Policy<'a, Permissive>;
+/// An alias for [`Policy`] with [`Permissive`] directive.
+pub type AllowAllPolicy<'a> = Policy<'a, Permissive>;
+
+/// An alias for [`Policy`] with [`Restrictive`] directive.
 pub type RestrictivePolicy<'a> = Policy<'a, Restrictive>;
+/// An alias for [`Policy`] with [`Restrictive`] directive.
+pub type DenyAllPolicy<'a> = Policy<'a, Restrictive>;
