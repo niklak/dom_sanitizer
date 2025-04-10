@@ -1,17 +1,59 @@
+/// Provides a set of predefined policies for sanitizing HTML content.
+///
+/// # Policies
+///
+/// - **`table_policy`**:
+///   Excludes all table-related elements such as `table`, `caption`, `colgroup`, `col`, `th`,
+///   `tbody`, `tr`, `td`, and `tfoot`.
+///
+/// - **`table_attr_policy`**:
+///   Excludes specific attributes for table-related elements:
+///   - `colgroup`: Excludes the `span` attribute.
+///   - `col`: Excludes the `span` attribute.
+///   - `th`: Excludes attributes like `abbr`, `colspan`, `headers`, `rowspan`, and `scope`.
+///   - `td`: Excludes attributes like `colspan`, `headers`, and `rowspan`.
+///
+/// - **`global_attr_policy`**:
+///   Excludes global attributes such as `class`, `id`, and `role`.
+///
+/// - **`highlight_policy`**:
+///   Excludes text formatting elements such as `b`, `del`, `em`, `i`, `ins`, `mark`, `s`,
+///   `small`, `strong`, and `u`.
+///
+/// - **`list_policy`**:
+///   Excludes list-related elements such as `li`, `ul`, and `ol`.
+///
+/// # Generics
+///
+/// Each policy is generic over a type `T` that implements the `SanitizeDirective` trait.
+///
+/// # Usage
+///
+/// These policies can be used to configure a `Policy` object for sanitizing HTML content
+/// by excluding specific elements or attributes based on the requirements.
 use crate::policy::Policy;
 use crate::policy::SanitizeDirective;
 
+
+/// Excludes all table-related elements, such as `table`, `caption`, `colgroup`, `col`, `th`,
+/// `tbody`, `tr`, `td`, and `tfoot`, from the base sanitization policy.
 pub fn table_policy<'a, T>() -> Policy<'a, T>
 where
     T: SanitizeDirective,
 {
     Policy::builder()
         .exclude_elements(&[
-            "table", "caption", "colgroup", "col", "col", "th", "tbody", "tr", "td", "tfoot",
+            "table", "caption", "colgroup", "col", "th", "tbody", "tr", "td", "tfoot",
         ])
         .build()
 }
 
+/// Excludes specific attributes for table-related elements from the base sanitization policy:
+/// 
+/// - `colgroup`: Excludes the `span` attribute.
+/// - `col`: Excludes the `span` attribute.
+/// - `th`: Excludes attributes like `abbr`, `colspan`, `headers`, `rowspan`, and `scope`.
+/// - `td`: Excludes attributes like `colspan`, `headers`, and `rowspan`.
 pub fn table_attr_policy<'a, T>() -> Policy<'a, T>
 where
     T: SanitizeDirective,
@@ -24,15 +66,18 @@ where
         .build()
 }
 
+/// Excludes global attributes such as `class`, `id`, and `role` from the base sanitization policy.
 pub fn global_attr_policy<'a, T>() -> Policy<'a, T>
 where
     T: SanitizeDirective,
 {
     Policy::builder()
-        .exclude_attrs(&["class", "id", "role"])
+        .exclude_attrs(&["class", "dir", "id", "role", "lang", "title"])
         .build()
 }
 
+/// Excludes text formatting elements, such as `b`, `del`, `em`, `i`, `ins`, `mark`, `s`,
+/// `small`, `strong`, and `u`, from the base sanitization policy.
 pub fn highlight_policy<'a, T>() -> Policy<'a, T>
 where
     T: SanitizeDirective,
@@ -42,7 +87,7 @@ where
         .build()
 }
 
-
+/// Excludes list-related elements, such as `li`, `ul`, and `ol`, from the base sanitization policy.
 pub fn list_policy<'a, T>() -> Policy<'a, T>
 where
     T: SanitizeDirective,
