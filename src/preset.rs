@@ -58,7 +58,7 @@ where
 {
     Policy::builder()
         .exclude_elements(&[
-            "table", "caption", "colgroup", "col", "th", "tbody", "tr", "td", "tfoot",
+            "table", "caption", "colgroup", "col", "th", "thead", "tbody", "tr", "td", "tfoot",
         ])
         .build()
 }
