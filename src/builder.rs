@@ -89,6 +89,13 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
         self
     }
 
+    /// Merges existing [`Policy`] into the builder, consuming it.
+    pub fn merge(mut self, other: Policy<'a, T>) -> Self {
+        self.attr_rules.extend(other.attr_rules);
+        self.element_rules.extend(other.element_rules);
+        self
+    }
+
     /// Builds the [`Policy`] using the current configuration.
     pub fn build(self) -> Policy<'a, T> {
         Policy {
