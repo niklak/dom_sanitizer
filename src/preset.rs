@@ -14,7 +14,7 @@
 ///   - `td`: Excludes attributes like `colspan`, `headers`, and `rowspan`.
 ///
 /// - **`global_attr_policy`**:
-///   Excludes global attributes such as `class`, `id`, and `role`.
+///   Excludes global attributes such as `class`, `id`, `lang`, `role` and `title`.
 ///
 /// - **`highlight_policy`**:
 ///   Excludes text formatting elements such as `b`, `del`, `em`, `i`, `ins`, `mark`, `s`,
@@ -31,6 +31,21 @@
 ///
 /// These policies can be used to configure a `Policy` object for sanitizing HTML content
 /// by excluding specific elements or attributes based on the requirements.
+/// 
+/// # Examples
+///
+/// ```
+/// use dom_sanitizer::{DenyAllPolicy, Policy};
+/// use dom_sanitizer::preset::{table_policy, highlight_policy};
+///
+/// // Create a policy that restricts all elements except tables and highlight elements
+/// // Also it allows `h1`, `h2`, `h3`, `p`, and `a` elements.
+/// let policy = DenyAllPolicy::builder()
+///     .merge(table_policy())
+///     .merge(highlight_policy())
+///     .exclude_elements(&["h1", "h2", "h3", "p", "a"])
+///     .build();
+/// ```
 use crate::policy::Policy;
 use crate::policy::SanitizeDirective;
 
@@ -66,7 +81,7 @@ where
         .build()
 }
 
-/// Excludes global attributes such as `class`, `id`, and `role` from the base sanitization policy.
+/// Excludes global attributes such as `class`, `id`, `role`, `dir`, `lang`, and `title` from the base sanitization policy.
 pub fn global_attr_policy<'a, T>() -> Policy<'a, T>
 where
     T: SanitizeDirective,
