@@ -1,4 +1,4 @@
-use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
+use crate::{attr_parser::AttrMatcher, policy::{AttributeRule, Permissive, Policy, SanitizeDirective}};
 
 /// A builder for constructing a [`Policy`] with customizable sanitization rules.
 ///

@@ -1,6 +1,6 @@
 use dom_query::{Document, NodeRef};
 
-use crate::builder::PolicyBuilder;
+use crate::{attr_parser::AttrMatcher, builder::PolicyBuilder};
 
 /// Elements that should never be removed during sanitization, as they are
 /// fundamental to the document structure.
@@ -125,7 +125,7 @@ pub struct AttributeRule<'a> {
     /// If `None`, the rule applies to all elements.
     pub element: Option<&'a str>,
     /// The list of attribute keys
-    pub attributes: &'a [&'a str],
+    pub attributes: &'a [AttrMatcher<'a>],
 }
 
 #[derive(Debug, Clone)]
@@ -171,18 +171,39 @@ impl<T: SanitizeDirective> Policy<'_, T> {
         let Some(qual_name) = node.qual_name_ref() else {
             return vec![];
         };
-        let mut attrs: Vec<&str> = vec![];
+        let mut attrs_matchers: Vec<&AttrMatcher> = vec![];
 
         for rule in &self.attr_rules {
             let Some(element_name) = rule.element else {
-                attrs.extend(rule.attributes.iter());
+                attrs_matchers.extend(rule.attributes.iter());
                 continue;
             };
             if qual_name.local.as_ref() == element_name {
-                attrs.extend(rule.attributes.iter());
+                attrs_matchers.extend(rule.attributes.iter());
             }
         }
-        attrs
+
+        let Some(el) = node.element_ref() else {
+            return vec![];
+        };
+
+        let mut exclusive_attrs: Vec<&str> = vec![];
+
+        for matcher in attrs_matchers.iter() {
+            let key = matcher.key;
+            let is_match = match &matcher.value {
+                Some(matcher_value) => el
+                    .attrs
+                    .iter()
+                    .any(|a| &a.name.local == key && matcher_value.is_match(&a.value)),
+                _ => el.has_attr(key),
+            };
+            
+            if is_match {
+                exclusive_attrs.push(key);
+            }
+        }
+        exclusive_attrs
     }
 }
 

@@ -57,10 +57,42 @@ pub(crate) struct AttrValue<'a> {
     pub value: &'a str,
 }
 
+impl <'a> AttrValue<'a> {
+    pub(crate) fn is_match(&self, elem_value: &str) -> bool {
+
+        if elem_value.is_empty() {
+            return false;
+        }
+        let e = elem_value.as_bytes();
+        let s = self.value.as_bytes();
+
+        match self.op {
+            AttrOperator::Equals => e == s,
+            AttrOperator::Includes => elem_value
+                .split(SELECTOR_WHITESPACE)
+                .any(|part| part.as_bytes() == s),
+            AttrOperator::DashMatch => {
+                e == s
+                    || (e.starts_with(s) && e.len() > s.len() && &e[s.len()..s.len() + 1] == b"-")
+            }
+            AttrOperator::Prefix => e.starts_with(s),
+            AttrOperator::Suffix => e.ends_with(s),
+            AttrOperator::Substring => elem_value.contains(self.value),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub(crate) struct AttrMatcher<'a> {
     pub key: &'a str,
     pub value: Option<AttrValue<'a>>,
+}
+
+impl<'a> AttrMatcher<'a> {
+    pub(crate) fn parse(input: &'a str) -> Result<Self, nom::Err<nom::error::Error<&'a str>>> {
+        let (_, m)= parse_attr(input)?;
+        Ok(m)
+    }
 }
 
 fn parse_attr_key(input: &str) -> IResult<&str, &str> {
