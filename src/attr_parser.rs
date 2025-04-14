@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while1},
     character::complete::{char, multispace0},
-    combinator::{cut, map, opt},
+    combinator::{cut, map, opt, rest},
     sequence::{delimited, preceded, terminated},
     IResult, Parser,
 };
@@ -85,8 +85,11 @@ fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
 
 fn parse_attr_value(input: &str) -> IResult<&str, AttrValue> {
     let (input, op) = parse_attr_operator(input)?;
-    let (input, value) =
-        preceded(char('"'), cut(terminated(is_not("\""), char('"')))).parse(input)?;
+    let (input, value) = alt((
+        preceded(char('"'), cut(terminated(is_not("\""), char('"')))),
+        rest,
+    ))
+    .parse(input)?;
     Ok((input, AttrValue { op, value }))
 }
 
@@ -214,7 +217,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_attr() {
+    fn test_parse_attr_with_double_quotes() {
         assert_eq!(
             parse_attr(r#"key"#).unwrap().1,
             AttrMatcher {
@@ -252,6 +255,52 @@ mod tests {
                 value: Some(AttrValue {
                     op: AttrOperator::Includes,
                     value: "value"
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_attr_no_double_quotes() {
+        assert_eq!(
+            parse_attr(r#"key=value"#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: Some(AttrValue {
+                    op: AttrOperator::Equals,
+                    value: "value"
+                }),
+            }
+        );
+
+        assert_eq!(
+            parse_attr(r#"key = value"#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: Some(AttrValue {
+                    op: AttrOperator::Equals,
+                    value: "value"
+                }),
+            }
+        );
+
+        assert_eq!(
+            parse_attr(r#"key~=value"#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: Some(AttrValue {
+                    op: AttrOperator::Includes,
+                    value: "value"
+                }),
+            }
+        );
+        assert_eq!(
+            parse_attr(r#"key ~= some value"#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: Some(AttrValue {
+                    op: AttrOperator::Includes,
+                    value: "some value"
                 }),
             }
         );
