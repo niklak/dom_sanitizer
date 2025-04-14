@@ -7,7 +7,6 @@ use nom::{
     IResult, Parser,
 };
 
-
 static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
 
 #[derive(Debug, PartialEq)]
@@ -53,12 +52,20 @@ pub(crate) enum Combinator {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct AttrMatcher<'a> {
-    pub key: &'a str,
-    pub op: Option<AttrOperator>,
-    pub value: Option<&'a str>,
+pub(crate) struct AttrValue<'a> {
+    pub op: AttrOperator,
+    pub value: &'a str,
 }
 
+#[derive(Debug, PartialEq)]
+pub(crate) struct AttrMatcher<'a> {
+    pub key: &'a str,
+    pub value: Option<AttrValue<'a>>,
+}
+
+fn parse_attr_key(input: &str) -> IResult<&str, &str> {
+    take_while1(|c: char| c.is_ascii_alphanumeric() || c == '-').parse(input)
+}
 
 fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
     delimited(
@@ -76,25 +83,26 @@ fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
     .parse(input)
 }
 
+fn parse_attr_value(input: &str) -> IResult<&str, AttrValue> {
+    let (input, op) = parse_attr_operator(input)?;
+    let (input, value) =
+        preceded(char('"'), cut(terminated(is_not("\""), char('"')))).parse(input)?;
+    Ok((input, AttrValue { op, value }))
+}
+
 fn parse_attr(input: &str) -> IResult<&str, AttrMatcher> {
-    let key = take_while1(|c: char| c.is_ascii_alphanumeric() || c == '-');
-    let op = opt(parse_attr_operator);
-    let value = opt(preceded(
-        char('"'),
-        cut(terminated(is_not("\""), char('"'))),
-    ));
-
-    let (input, (k, op, v)) =
-        delimited(char('['), (map(key, |k| k), op, value), char(']')).parse(input)?;
-
-    Ok((
-        input,
-        AttrMatcher {
-            key: k,
-            op,
-            value: v,
-        },
+    let (input, (key, value)) = alt((
+        // Try to parse the attribute with square brackets
+        delimited(
+            char('['),
+            (parse_attr_key, opt(parse_attr_value)),
+            char(']'),
+        ),
+        // If that fails, try to parse the attribute without square brackets
+        (parse_attr_key, opt(parse_attr_value)),
     ))
+    .parse(input)?;
+    Ok((input, AttrMatcher { key, value }))
 }
 
 #[cfg(test)]
@@ -103,39 +111,26 @@ mod tests {
 
     #[test]
     fn test_parse_attr_operator() {
-        assert_eq!(
-            parse_attr_operator("~=").unwrap().1,
-            AttrOperator::Includes
-        );
+        assert_eq!(parse_attr_operator("~=").unwrap().1, AttrOperator::Includes);
         assert_eq!(
             parse_attr_operator("|=").unwrap().1,
             AttrOperator::DashMatch
         );
-        assert_eq!(
-            parse_attr_operator("^=").unwrap().1,
-            AttrOperator::Prefix
-        );
-        assert_eq!(
-            parse_attr_operator("$=").unwrap().1,
-            AttrOperator::Suffix
-        );
+        assert_eq!(parse_attr_operator("^=").unwrap().1, AttrOperator::Prefix);
+        assert_eq!(parse_attr_operator("$=").unwrap().1, AttrOperator::Suffix);
         assert_eq!(
             parse_attr_operator("*=").unwrap().1,
             AttrOperator::Substring
         );
-        assert_eq!(
-            parse_attr_operator("=").unwrap().1,
-            AttrOperator::Equals
-        );
+        assert_eq!(parse_attr_operator("=").unwrap().1, AttrOperator::Equals);
     }
 
     #[test]
-    fn test_parse_attr() {
+    fn test_parse_attr_square_brackets() {
         assert_eq!(
             parse_attr(r#"[key]"#).unwrap().1,
             AttrMatcher {
                 key: "key",
-                op: None,
                 value: None,
             }
         );
@@ -144,8 +139,21 @@ mod tests {
             parse_attr(r#"[key="value"]"#).unwrap().1,
             AttrMatcher {
                 key: "key",
-                op: Some(AttrOperator::Equals),
-                value: Some("value"),
+                value: Some(AttrValue {
+                    op: AttrOperator::Equals,
+                    value: "value"
+                }),
+            }
+        );
+
+        assert_eq!(
+            parse_attr(r#"[key = "value"]"#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: Some(AttrValue {
+                    op: AttrOperator::Equals,
+                    value: "value"
+                }),
             }
         );
 
@@ -153,8 +161,10 @@ mod tests {
             parse_attr(r#"[key~="value"]"#).unwrap().1,
             AttrMatcher {
                 key: "key",
-                op: Some(AttrOperator::Includes),
-                value: Some("value"),
+                value: Some(AttrValue {
+                    op: AttrOperator::Includes,
+                    value: "value"
+                }),
             }
         );
 
@@ -162,8 +172,10 @@ mod tests {
             parse_attr(r#"[key|="value"]"#).unwrap().1,
             AttrMatcher {
                 key: "key",
-                op: Some(AttrOperator::DashMatch),
-                value: Some("value"),
+                value: Some(AttrValue {
+                    op: AttrOperator::DashMatch,
+                    value: "value"
+                }),
             }
         );
 
@@ -171,8 +183,10 @@ mod tests {
             parse_attr(r#"[key^="value"]"#).unwrap().1,
             AttrMatcher {
                 key: "key",
-                op: Some(AttrOperator::Prefix),
-                value: Some("value"),
+                value: Some(AttrValue {
+                    op: AttrOperator::Prefix,
+                    value: "value"
+                }),
             }
         );
 
@@ -180,8 +194,10 @@ mod tests {
             parse_attr(r#"[key$="value"]"#).unwrap().1,
             AttrMatcher {
                 key: "key",
-                op: Some(AttrOperator::Suffix),
-                value: Some("value"),
+                value: Some(AttrValue {
+                    op: AttrOperator::Suffix,
+                    value: "value"
+                }),
             }
         );
 
@@ -189,11 +205,60 @@ mod tests {
             parse_attr(r#"[key*="value"]"#).unwrap().1,
             AttrMatcher {
                 key: "key",
-                op: Some(AttrOperator::Substring),
-                value: Some("value"),
+                value: Some(AttrValue {
+                    op: AttrOperator::Substring,
+                    value: "value"
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_attr() {
+        assert_eq!(
+            parse_attr(r#"key"#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: None,
             }
         );
 
+        assert_eq!(
+            parse_attr(r#"key="value""#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: Some(AttrValue {
+                    op: AttrOperator::Equals,
+                    value: "value"
+                }),
+            }
+        );
+
+        assert_eq!(
+            parse_attr(r#"key = "value""#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: Some(AttrValue {
+                    op: AttrOperator::Equals,
+                    value: "value"
+                }),
+            }
+        );
+
+        assert_eq!(
+            parse_attr(r#"key~="value""#).unwrap().1,
+            AttrMatcher {
+                key: "key",
+                value: Some(AttrValue {
+                    op: AttrOperator::Includes,
+                    value: "value"
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_attr_err() {
         assert!(parse_attr(r#"[key"#).is_err());
         assert!(parse_attr(r#"[key="value"#).is_err());
         assert!(parse_attr(r#"[key~]"#).is_err());
