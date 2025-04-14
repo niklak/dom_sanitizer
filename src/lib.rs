@@ -1,3 +1,4 @@
+mod attr_parser;
 mod builder;
 mod ext;
 mod policy;
