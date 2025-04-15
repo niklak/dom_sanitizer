@@ -125,7 +125,7 @@ pub struct AttributeRule<'a> {
     /// If `None`, the rule applies to all elements.
     pub element: Option<&'a str>,
     /// The list of attribute keys
-    pub attributes: &'a [AttrMatcher<'a>],
+    pub attributes: Box<[AttrMatcher]>,
 }
 
 #[derive(Debug, Clone)]
@@ -190,7 +190,7 @@ impl<T: SanitizeDirective> Policy<'_, T> {
         let mut exclusive_attrs: Vec<&str> = vec![];
 
         for matcher in attrs_matchers.iter() {
-            let key = matcher.key;
+            let key = matcher.key.as_ref();
             let is_match = match &matcher.value {
                 Some(matcher_value) => el
                     .attrs
@@ -198,7 +198,7 @@ impl<T: SanitizeDirective> Policy<'_, T> {
                     .any(|a| &a.name.local == key && matcher_value.is_match(&a.value)),
                 _ => el.has_attr(key),
             };
-            
+
             if is_match {
                 exclusive_attrs.push(key);
             }

@@ -9,8 +9,10 @@ use nom::{
 
 static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
 
-#[derive(Debug, PartialEq)]
-pub(crate) enum AttrOperator {
+pub type AttrMatcherParseError<'a> = nom::Err<nom::error::Error<&'a str>>;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AttrOperator {
     Equals,    // =
     Includes,  // ~=
     DashMatch, // |=
@@ -19,47 +21,14 @@ pub(crate) enum AttrOperator {
     Substring, // *=
 }
 
-impl AttrOperator {
-    fn match_attr(&self, elem_value: &str, value: &str) -> bool {
-        if elem_value.is_empty() || value.is_empty() {
-            return false;
-        }
-        let e = elem_value.as_bytes();
-        let s = value.as_bytes();
-
-        match self {
-            AttrOperator::Equals => e == s,
-            AttrOperator::Includes => elem_value
-                .split(SELECTOR_WHITESPACE)
-                .any(|part| part.as_bytes() == s),
-            AttrOperator::DashMatch => {
-                e == s
-                    || (e.starts_with(s) && e.len() > s.len() && &e[s.len()..s.len() + 1] == b"-")
-            }
-            AttrOperator::Prefix => e.starts_with(s),
-            AttrOperator::Suffix => e.ends_with(s),
-            AttrOperator::Substring => elem_value.contains(value),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub(crate) enum Combinator {
-    Descendant,
-    Child,
-    Adjacent,
-    Sibling,
-}
-
-#[derive(Debug, PartialEq)]
-pub(crate) struct AttrValue<'a> {
+#[derive(Debug, Clone, PartialEq)]
+pub struct AttrValue {
     pub op: AttrOperator,
-    pub value: &'a str,
+    pub value: Box<str>,
 }
 
-impl <'a> AttrValue<'a> {
+impl AttrValue {
     pub(crate) fn is_match(&self, elem_value: &str) -> bool {
-
         if elem_value.is_empty() {
             return false;
         }
@@ -77,20 +46,20 @@ impl <'a> AttrValue<'a> {
             }
             AttrOperator::Prefix => e.starts_with(s),
             AttrOperator::Suffix => e.ends_with(s),
-            AttrOperator::Substring => elem_value.contains(self.value),
+            AttrOperator::Substring => elem_value.contains(self.value.as_ref()),
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub(crate) struct AttrMatcher<'a> {
-    pub key: &'a str,
-    pub value: Option<AttrValue<'a>>,
+#[derive(Debug, PartialEq, Clone)]
+pub struct AttrMatcher {
+    pub key: Box<str>,
+    pub value: Option<AttrValue>,
 }
 
-impl<'a> AttrMatcher<'a> {
-    pub(crate) fn parse(input: &'a str) -> Result<Self, nom::Err<nom::error::Error<&'a str>>> {
-        let (_, m)= parse_attr(input)?;
+impl AttrMatcher {
+    pub(crate) fn parse(input: &str) -> Result<Self, AttrMatcherParseError> {
+        let (_, m) = parse_attr(input)?;
         Ok(m)
     }
 }
@@ -122,7 +91,13 @@ fn parse_attr_value(input: &str) -> IResult<&str, AttrValue> {
         rest,
     ))
     .parse(input)?;
-    Ok((input, AttrValue { op, value }))
+    Ok((
+        input,
+        AttrValue {
+            op,
+            value: value.into(),
+        },
+    ))
 }
 
 fn parse_attr(input: &str) -> IResult<&str, AttrMatcher> {
@@ -137,7 +112,13 @@ fn parse_attr(input: &str) -> IResult<&str, AttrMatcher> {
         (parse_attr_key, opt(parse_attr_value)),
     ))
     .parse(input)?;
-    Ok((input, AttrMatcher { key, value }))
+    Ok((
+        input,
+        AttrMatcher {
+            key: key.into(),
+            value,
+        },
+    ))
 }
 
 #[cfg(test)]
@@ -165,7 +146,7 @@ mod tests {
         assert_eq!(
             parse_attr(r#"[key]"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: None,
             }
         );
@@ -173,10 +154,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"[key="value"]"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Equals,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -184,10 +165,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"[key = "value"]"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Equals,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -195,10 +176,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"[key~="value"]"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Includes,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -206,10 +187,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"[key|="value"]"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::DashMatch,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -217,10 +198,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"[key^="value"]"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Prefix,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -228,10 +209,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"[key$="value"]"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Suffix,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -239,10 +220,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"[key*="value"]"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Substring,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -253,7 +234,7 @@ mod tests {
         assert_eq!(
             parse_attr(r#"key"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: None,
             }
         );
@@ -261,10 +242,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"key="value""#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Equals,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -272,10 +253,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"key = "value""#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Equals,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -283,10 +264,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"key~="value""#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Includes,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -297,10 +278,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"key=value"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Equals,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -308,10 +289,10 @@ mod tests {
         assert_eq!(
             parse_attr(r#"key = value"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Equals,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
@@ -319,20 +300,20 @@ mod tests {
         assert_eq!(
             parse_attr(r#"key~=value"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Includes,
-                    value: "value"
+                    value: "value".into()
                 }),
             }
         );
         assert_eq!(
             parse_attr(r#"key ~= some value"#).unwrap().1,
             AttrMatcher {
-                key: "key",
+                key: "key".into(),
                 value: Some(AttrValue {
                     op: AttrOperator::Includes,
-                    value: "some value"
+                    value: "some value".into()
                 }),
             }
         );

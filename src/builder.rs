@@ -1,4 +1,7 @@
-use crate::{attr_parser::AttrMatcher, policy::{AttributeRule, Permissive, Policy, SanitizeDirective}};
+use crate::{
+    attr_parser::AttrMatcher,
+    policy::{AttributeRule, Permissive, Policy, SanitizeDirective},
+};
 
 /// A builder for constructing a [`Policy`] with customizable sanitization rules.
 ///
@@ -65,12 +68,14 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
 
     /// Excludes the specified attributes from the base sanitization directive.
     ///
+    /// # Panics
+    ///
     /// - If the sanitization directive is [`crate::Permissive`], these attributes will be removed from all elements where they appear.
     /// - If the sanitization directive is [`crate::Restrictive`], only these attributes will be kept; all others will be removed from all elements.
     pub fn exclude_attrs(mut self, attrs: &'a [&str]) -> Self {
         let rule = AttributeRule {
             element: None,
-            attributes: attrs,
+            attributes: parse_attr_matchers(attrs),
         };
         self.attr_rules.push(rule);
         self
@@ -78,12 +83,14 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
 
     /// Excludes the specified attributes from the base sanitization directive for a specific element.
     ///
+    /// # Panics
+    ///
     /// - If the sanitization directive is [`crate::Permissive`], these attributes will be removed from the specified element.
     /// - If the sanitization directive is [`crate::Restrictive`], only these attributes will be kept for the specified element; all others will be removed.
     pub fn exclude_element_attrs(mut self, element: &'a str, attrs: &'a [&str]) -> Self {
         let rule = AttributeRule {
             element: Some(element),
-            attributes: attrs,
+            attributes: parse_attr_matchers(attrs),
         };
         self.attr_rules.push(rule);
         self
@@ -104,4 +111,13 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
             _directive: std::marker::PhantomData,
         }
     }
+}
+
+fn parse_attr_matchers(attrs: &[&str]) -> Box<[AttrMatcher]> {
+    let mut matchers = vec![];
+    for attr in attrs {
+        let matcher = AttrMatcher::parse(attr).unwrap();
+        matchers.push(matcher);
+    }
+    matchers.into()
 }
