@@ -102,3 +102,48 @@ fn test_permissive_policy_simple() {
     assert!(doc.select("p").exists());
     assert!(doc.select("a").exists());
 }
+
+
+#[test]
+fn test_permissive_policy_remove() {
+    // In some cases it's not enough to just exclude elements from the sanitization policy.
+    // You may want to remove them from the DOM tree entirely, including their children.
+    // E.g. when you want to remove all `style` elements from the document.
+    // But you specify it in exclude_elements() method, it will only remove the `style` element, keeping its text content.
+    let policy = AllowAllPolicy::builder()
+        .exclude_elements(&["style"])
+        .build();
+    let contents = include_str!("../test-pages/table.html");
+    let doc = Document::from(contents);
+    policy.sanitize_document(&doc);
+
+    assert!(!doc.select("style").exists());
+
+    // After sanitization, we got style inner contents without the `style` elements -- as a text node.
+    assert!(doc.html().contains("border-collapse: collapse"));
+
+    // For such cases it's better to use the `remove_elements()` method.
+    let policy = AllowAllPolicy::builder()
+        .remove_elements(&["style"])
+        .build();
+    let doc = Document::from(contents);
+    policy.sanitize_document(&doc);
+    // in that case style elements are removed from the DOM tree, including their text content.
+    assert!(!doc.select("style").exists());
+    assert!(!doc.html().contains("border-collapse: collapse"));
+}
+
+#[test]
+fn test_restrictive_policy_remove() {
+    // Removing elements with `DenyAllPolicy` works the same way as with `AllowAllPolicy`.
+
+    let policy = DenyAllPolicy::builder()
+        .remove_elements(&["style"])
+        .build();
+    let doc: Document = include_str!("../test-pages/table.html").into();
+    
+    policy.sanitize_document(&doc);
+    // in that case style elements are removed from the DOM tree, including their text content.
+    assert!(!doc.select("style").exists());
+    assert!(!doc.html().contains("border-collapse: collapse"));
+}

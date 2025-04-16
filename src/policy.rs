@@ -34,7 +34,7 @@ impl SanitizeDirective for Permissive {
     /// Removes matching elements from the DOM keeping their children.
     /// Removes matching attributes from the element node.
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
-        if policy.excluded_elements.is_empty() && policy.attr_rules.is_empty() {
+        if policy.elements_to_exclude.is_empty() && policy.elements_to_remove.is_empty() && policy.attr_rules.is_empty() {
             return;
         }
 
@@ -42,11 +42,16 @@ impl SanitizeDirective for Permissive {
 
         while let Some(ref child_node) = child {
             let next_node = child_node.next_sibling();
+            if is_node_name_in(&policy.elements_to_remove, child_node) {
+                child_node.remove_from_parent();
+                child = next_node;
+                continue;
+            }
             if child_node.may_have_children() {
                 Self::sanitize_node(policy, child_node);
             }
 
-            if is_node_name_in(&policy.excluded_elements, child_node) {
+            if is_node_name_in(&policy.elements_to_exclude, child_node) {
                 if let Some(first_inline) = child_node.first_child() {
                     child_node.insert_siblings_before(&first_inline);
                 };
@@ -83,6 +88,11 @@ impl SanitizeDirective for Restrictive {
 
         while let Some(ref child_node) = child {
             let next_node = child_node.next_sibling();
+            if is_node_name_in(&policy.elements_to_remove, child_node) {
+                child_node.remove_from_parent();
+                child = next_node;
+                continue;
+            }
             if child_node.may_have_children() {
                 Self::sanitize_node(policy, child_node);
             }
@@ -91,7 +101,7 @@ impl SanitizeDirective for Restrictive {
                 continue;
             }
             if is_node_name_in(ALWAYS_SKIP, child_node)
-                || is_node_name_in(&policy.excluded_elements, child_node)
+                || is_node_name_in(&policy.elements_to_exclude, child_node)
             {
                 Self::sanitize_node_attr(policy, child_node);
                 child = next_node;
@@ -138,7 +148,9 @@ pub struct Policy<'a, T: SanitizeDirective = Permissive> {
     /// The list of element names excluded from the base [Policy].
     /// For [Permissive] directive: elements to remove (keeping their children)
     /// For [Restrictive] directive: elements to keep
-    pub excluded_elements: Vec<&'a str>,
+    pub elements_to_exclude: Vec<&'a str>,
+    /// Specifies the names of elements to remove from the DOM with their children during sanitization.
+    pub elements_to_remove: Vec<&'a str>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
@@ -146,7 +158,8 @@ impl<T: SanitizeDirective> Default for Policy<'_, T> {
     fn default() -> Self {
         Self {
             attr_rules: Vec::new(),
-            excluded_elements: Vec::new(),
+            elements_to_exclude: Vec::new(),
+            elements_to_remove: Vec::new(),
             _directive: std::marker::PhantomData,
         }
     }
