@@ -6,6 +6,13 @@ use crate::builder::PolicyBuilder;
 /// fundamental to the document structure.
 static ALWAYS_SKIP: &[&str] = &["html", "head", "body"];
 
+fn is_node_name_in(names: &[&str], node: &NodeRef) -> bool {
+    let Some(qual_name) = node.qual_name_ref() else {
+        return false;
+    };
+    names.contains(&qual_name.local.as_ref())
+}
+
 /// A trait for sanitization directives, defines methods for node and attribute sanitization.
 pub trait SanitizeDirective {
     /// Sanitizes a node by removing elements and attributes based on the policy.
@@ -27,7 +34,7 @@ impl SanitizeDirective for Permissive {
     /// Removes matching elements from the DOM keeping their children.
     /// Removes matching attributes from the element node.
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
-        if policy.element_rules.is_empty() && policy.attr_rules.is_empty() {
+        if policy.elements_to_exclude.is_empty() && policy.elements_to_remove.is_empty() && policy.attr_rules.is_empty() {
             return;
         }
 
@@ -35,16 +42,16 @@ impl SanitizeDirective for Permissive {
 
         while let Some(ref child_node) = child {
             let next_node = child_node.next_sibling();
-            if child_node.may_have_children() {
-                Self::sanitize_node(policy, child_node);
-            }
-            if !child_node.is_element() {
+            if is_node_name_in(&policy.elements_to_remove, child_node) {
+                child_node.remove_from_parent();
                 child = next_node;
                 continue;
             }
-            if child_node.qual_name_ref().map_or(false, |name| {
-                policy.element_rules.contains(&name.local.as_ref())
-            }) {
+            if child_node.may_have_children() {
+                Self::sanitize_node(policy, child_node);
+            }
+
+            if is_node_name_in(&policy.elements_to_exclude, child_node) {
                 if let Some(first_inline) = child_node.first_child() {
                     child_node.insert_siblings_before(&first_inline);
                 };
@@ -81,6 +88,11 @@ impl SanitizeDirective for Restrictive {
 
         while let Some(ref child_node) = child {
             let next_node = child_node.next_sibling();
+            if is_node_name_in(&policy.elements_to_remove, child_node) {
+                child_node.remove_from_parent();
+                child = next_node;
+                continue;
+            }
             if child_node.may_have_children() {
                 Self::sanitize_node(policy, child_node);
             }
@@ -88,10 +100,9 @@ impl SanitizeDirective for Restrictive {
                 child = next_node;
                 continue;
             }
-            if child_node.qual_name_ref().map_or(false, |name| {
-                let local_name = name.local.as_ref();
-                ALWAYS_SKIP.contains(&local_name) || policy.element_rules.contains(&local_name)
-            }) {
+            if is_node_name_in(ALWAYS_SKIP, child_node)
+                || is_node_name_in(&policy.elements_to_exclude, child_node)
+            {
                 Self::sanitize_node_attr(policy, child_node);
                 child = next_node;
                 continue;
@@ -134,10 +145,12 @@ pub struct Policy<'a, T: SanitizeDirective = Permissive> {
     /// For [Permissive] directive: attributes to remove
     /// For [Restrictive] directive: attributes to keep
     pub attr_rules: Vec<AttributeRule<'a>>,
-    /// The list of excluding rules for elements.
-    /// For [Permissive] directive: elements to remove
+    /// The list of element names excluded from the base [Policy].
+    /// For [Permissive] directive: elements to remove (keeping their children)
     /// For [Restrictive] directive: elements to keep
-    pub element_rules: Vec<&'a str>,
+    pub elements_to_exclude: Vec<&'a str>,
+    /// Specifies the names of elements to remove from the DOM with their children during sanitization.
+    pub elements_to_remove: Vec<&'a str>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
@@ -145,7 +158,8 @@ impl<T: SanitizeDirective> Default for Policy<'_, T> {
     fn default() -> Self {
         Self {
             attr_rules: Vec::new(),
-            element_rules: Vec::new(),
+            elements_to_exclude: Vec::new(),
+            elements_to_remove: Vec::new(),
             _directive: std::marker::PhantomData,
         }
     }

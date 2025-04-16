@@ -1,6 +1,8 @@
 use dom_query::Document;
+use dom_sanitizer::preset::{
+    global_attr_policy, highlight_policy, list_policy, table_attr_policy, table_policy,
+};
 use dom_sanitizer::{AllowAllPolicy, DenyAllPolicy, Policy, Restrictive};
-use dom_sanitizer::preset::{global_attr_policy, highlight_policy, list_policy, table_attr_policy, table_policy};
 
 #[test]
 fn test_restrictive_policy_exclude_table_highlight() {
@@ -65,7 +67,10 @@ fn test_restrictive_policy_exclude_table_attrs() {
     policy.sanitize_document(&doc);
     assert!(!doc.select("[data-nutrition]").exists());
     assert_eq!(doc.select("th[scope]").length(), before_th_scope_count);
-    assert_eq!(doc.select("tr.nutrition-item").length(), before_tr_nutrition_count);
+    assert_eq!(
+        doc.select("tr.nutrition-item").length(),
+        before_tr_nutrition_count
+    );
 }
 
 #[test]
@@ -82,7 +87,7 @@ fn test_restrictive_policy_exclude_list() {
     let before_li_count = doc.select("ul > li").length();
     assert!(doc.select("h1").exists());
     assert!(doc.select("h3").exists());
-    
+
     assert!(doc.select("mark").exists());
     assert!(doc.select("i").exists());
     assert!(doc.select("b").exists());

@@ -31,7 +31,7 @@
 ///
 /// These policies can be used to configure a `Policy` object for sanitizing HTML content
 /// by excluding specific elements or attributes based on the requirements.
-/// 
+///
 /// # Examples
 ///
 /// ```
@@ -49,7 +49,6 @@
 use crate::policy::Policy;
 use crate::policy::SanitizeDirective;
 
-
 /// Excludes all table-related elements, such as `table`, `caption`, `colgroup`, `col`, `th`,
 /// `tbody`, `tr`, `td`, and `tfoot`, from the base sanitization policy.
 pub fn table_policy<'a, T>() -> Policy<'a, T>
@@ -64,7 +63,7 @@ where
 }
 
 /// Excludes specific attributes for table-related elements from the base sanitization policy:
-/// 
+///
 /// - `colgroup`: Excludes the `span` attribute.
 /// - `col`: Excludes the `span` attribute.
 /// - `th`: Excludes attributes like `abbr`, `colspan`, `headers`, `rowspan`, and `scope`.
@@ -98,7 +97,9 @@ where
     T: SanitizeDirective,
 {
     Policy::builder()
-        .exclude_elements(&["b", "del", "em", "i", "ins", "mark", "s", "small", "strong", "u"])
+        .exclude_elements(&[
+            "b", "del", "em", "i", "ins", "mark", "s", "small", "strong", "u",
+        ])
         .build()
 }
 
