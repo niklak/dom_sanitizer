@@ -102,6 +102,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     pub fn merge(mut self, other: Policy<'a, T>) -> Self {
         self.attr_rules.extend(other.attr_rules);
         self.elements_to_exclude.extend(other.elements_to_exclude);
+        self.elements_to_remove.extend(other.elements_to_remove);
         self
     }
 
