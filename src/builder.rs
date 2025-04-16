@@ -33,8 +33,8 @@ use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
 pub struct PolicyBuilder<'a, T: SanitizeDirective = Permissive> {
     /// A list of rules for excluding attributes.
     attr_rules: Vec<AttributeRule<'a>>,
-    /// A list of rules for excluding elements.
-    element_rules: Vec<&'a str>,
+    /// A list of element names to exclude from the base policy.
+    excluded_elements: Vec<&'a str>,
     _directive: std::marker::PhantomData<T>,
 }
 
@@ -42,7 +42,7 @@ impl<T: SanitizeDirective> Default for PolicyBuilder<'_, T> {
     fn default() -> Self {
         Self {
             attr_rules: vec![],
-            element_rules: vec![],
+            excluded_elements: vec![],
             _directive: std::marker::PhantomData,
         }
     }
@@ -59,7 +59,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     /// - If the sanitization directive is [`crate::Permissive`], these elements will be removed from the DOM.
     /// - If the sanitization directive is [`crate::Restrictive`], only these elements will be kept; all others will be removed.
     pub fn exclude_elements(mut self, elements: &'a [&str]) -> Self {
-        self.element_rules.extend(elements);
+        self.excluded_elements.extend(elements);
         self
     }
 
@@ -92,7 +92,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     /// Merges existing [`Policy`] into the builder, consuming it.
     pub fn merge(mut self, other: Policy<'a, T>) -> Self {
         self.attr_rules.extend(other.attr_rules);
-        self.element_rules.extend(other.element_rules);
+        self.excluded_elements.extend(other.excluded_elements);
         self
     }
 
@@ -100,7 +100,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     pub fn build(self) -> Policy<'a, T> {
         Policy {
             attr_rules: self.attr_rules,
-            element_rules: self.element_rules,
+            excluded_elements: self.excluded_elements,
             _directive: std::marker::PhantomData,
         }
     }
