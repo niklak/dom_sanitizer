@@ -34,7 +34,10 @@ impl SanitizeDirective for Permissive {
     /// Removes matching elements from the DOM keeping their children.
     /// Removes matching attributes from the element node.
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
-        if policy.elements_to_exclude.is_empty() && policy.elements_to_remove.is_empty() && policy.attr_rules.is_empty() {
+        if policy.elements_to_exclude.is_empty()
+            && policy.elements_to_remove.is_empty()
+            && policy.attr_rules.is_empty()
+        {
             return;
         }
 

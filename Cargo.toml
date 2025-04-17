@@ -9,3 +9,4 @@ authors = ["niklak <morgenpurple@gmail.com>"]
 
 [dependencies]
 dom_query = {version = "0.17.0"}
+html5ever= {version = "0.30.0"}

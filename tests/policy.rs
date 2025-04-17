@@ -103,7 +103,6 @@ fn test_permissive_policy_simple() {
     assert!(doc.select("a").exists());
 }
 
-
 #[test]
 fn test_permissive_policy_remove() {
     // In some cases it's not enough to just exclude elements from the sanitization policy.
@@ -137,11 +136,9 @@ fn test_permissive_policy_remove() {
 fn test_restrictive_policy_remove() {
     // Removing elements with `DenyAllPolicy` works the same way as with `AllowAllPolicy`.
 
-    let policy = DenyAllPolicy::builder()
-        .remove_elements(&["style"])
-        .build();
+    let policy = DenyAllPolicy::builder().remove_elements(&["style"]).build();
     let doc: Document = include_str!("../test-pages/table.html").into();
-    
+
     policy.sanitize_document(&doc);
     // in that case style elements are removed from the DOM tree, including their text content.
     assert!(!doc.select("style").exists());

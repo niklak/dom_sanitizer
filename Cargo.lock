@@ -95,6 +95,7 @@ name = "dom_sanitizer"
 version = "0.1.0"
 dependencies = [
  "dom_query",
+ "html5ever",
 ]
 
 [[package]]
