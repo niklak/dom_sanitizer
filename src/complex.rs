@@ -133,7 +133,7 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
 }
 
 impl<T: SanitizePluginDirective> PluginPolicy<T> {
-    pub fn builder() -> PluginPolicyBuilder {
+    pub fn builder() -> PluginPolicyBuilder<T> {
         PluginPolicyBuilder::new()
     }
 }
@@ -256,7 +256,7 @@ mod tests {
             </body>
         </html>"#;
         let doc = Document::from(contents);
-        let policy = PluginPolicy::<Restrictive>::builder()
+        let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
             .exclude(AllowOnlyHttps)
             .exclude(AllowNonEmptyDiv)
             .exclude(AllowP)
