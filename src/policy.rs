@@ -13,6 +13,16 @@ fn is_node_name_in(names: &[&str], node: &NodeRef) -> bool {
     names.contains(&qual_name.local.as_ref())
 }
 
+/// A base sanitization directive, which allows all elements and attributes,
+/// excluding listed in policy.
+#[derive(Debug, Clone, Copy)]
+pub struct Permissive;
+
+/// A base sanitization directive, which restricts all elements and attributes,
+/// excluding listed in policy.
+#[derive(Debug, Clone, Copy)]
+pub struct Restrictive;
+
 /// A trait for sanitization directives, defines methods for node and attribute sanitization.
 pub trait SanitizeDirective {
     /// Sanitizes a node by removing elements and attributes based on the policy.
@@ -20,15 +30,10 @@ pub trait SanitizeDirective {
     where
         Self: Sized;
     /// Sanitizes the attributes of a node by removing or retaining them based on the policy.
-    fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef)
+    fn sanitize_node_attrs(policy: &Policy<Self>, node: &dom_query::NodeRef)
     where
         Self: Sized;
 }
-
-/// A base sanitization directive, which allows all elements and attributes,
-/// excluding listed in policy.
-#[derive(Debug, Clone, Copy)]
-pub struct Permissive;
 
 impl SanitizeDirective for Permissive {
     /// Removes matching elements from the DOM keeping their children.
@@ -60,13 +65,13 @@ impl SanitizeDirective for Permissive {
                 };
                 child_node.remove_from_parent();
             }
-            Self::sanitize_node_attr(policy, child_node);
+            Self::sanitize_node_attrs(policy, child_node);
             child = next_node;
         }
     }
 
     /// Removes matching attributes from the element node.
-    fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef) {
+    fn sanitize_node_attrs(policy: &Policy<Self>, node: &dom_query::NodeRef) {
         if policy.attr_rules.is_empty() {
             return;
         }
@@ -75,11 +80,6 @@ impl SanitizeDirective for Permissive {
         node.remove_attrs(&attrs);
     }
 }
-
-/// A base sanitization directive, which restricts all elements and attributes,
-/// excluding listed in policy.
-#[derive(Debug, Clone, Copy)]
-pub struct Restrictive;
 
 impl SanitizeDirective for Restrictive {
     /// Removes elements from the DOM keeping their children with exception of
@@ -106,7 +106,7 @@ impl SanitizeDirective for Restrictive {
             if is_node_name_in(ALWAYS_SKIP, child_node)
                 || is_node_name_in(&policy.elements_to_exclude, child_node)
             {
-                Self::sanitize_node_attr(policy, child_node);
+                Self::sanitize_node_attrs(policy, child_node);
                 child = next_node;
                 continue;
             }
@@ -121,7 +121,7 @@ impl SanitizeDirective for Restrictive {
 
     /// Removes all attributes from the element node with exception of
     /// attributes listed in policy.
-    fn sanitize_node_attr(policy: &Policy<Self>, node: &dom_query::NodeRef) {
+    fn sanitize_node_attrs(policy: &Policy<Self>, node: &dom_query::NodeRef) {
         if policy.attr_rules.is_empty() {
             node.remove_all_attrs();
             return;

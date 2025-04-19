@@ -1,16 +1,17 @@
 use dom_query::NodeRef;
 use html5ever::{Attribute, LocalName};
 
-pub trait NodeAllowChecker {
+use crate::{Permissive, Restrictive};
+pub trait NodeExclusionChecker {
     /// Checks if the node is allowed by the policy.
-    fn should_allow(&self, _node: &NodeRef) -> bool {
+    fn should_exclude(&self, _node: &NodeRef) -> bool {
         // Default implementation allows all nodes.
         false
     }
 }
 
-pub trait AttributeAllowChecker {
-    fn should_allow_attribute(&self, _node: &NodeRef, _attr: &Attribute) -> bool {
+pub trait AttrExclusionChecker {
+    fn should_exclude_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool {
         false
     }
 }
@@ -21,16 +22,77 @@ pub trait NodeRemoveChecker {
     }
 }
 
-pub struct RestrictivePluginPolicy {
-    allow_checkers: Vec<Box<dyn NodeAllowChecker>>,
-    remove_checkers: Vec<Box<dyn NodeRemoveChecker>>,
-    attribute_allow_checkers: Vec<Box<dyn AttributeAllowChecker>>,
+/// A trait for sanitization directives, defines methods for node and attribute sanitization.
+pub trait SanitizePluginDirective {
+    /// Sanitizes a node by removing elements and attributes based on the policy.
+    fn sanitize_node(policy: &PluginPolicy<Self>, node: &NodeRef)
+    where
+        Self: Sized;
+    /// Sanitizes the attributes of a node by removing or retaining them based on the policy.
+    fn sanitize_node_attrs(policy: &PluginPolicy<Self>, node: &dom_query::NodeRef)
+    where
+        Self: Sized;
 }
 
-impl RestrictivePluginPolicy {
-    fn should_allow(&self, node: &NodeRef) -> bool {
-        for checker in &self.allow_checkers {
-            if checker.should_allow(node) {
+impl SanitizePluginDirective for Restrictive {
+    fn sanitize_node(policy: &PluginPolicy<Self>, node: &NodeRef) {
+        let mut child = node.first_child();
+
+        while let Some(ref child_node) = child {
+            let next_node = child_node.next_sibling();
+
+            if policy.should_remove(child_node) {
+                child_node.remove_from_parent();
+                child = next_node;
+                continue;
+            }
+            if child_node.may_have_children() {
+                policy.sanitize_node(child_node);
+            }
+            if !child_node.is_element() {
+                child = next_node;
+                continue;
+            }
+            if policy.should_exclude(child_node) {
+                Self::sanitize_node_attrs(policy, child_node);
+                child = next_node;
+                continue;
+            }
+
+            if let Some(first_inline) = child_node.first_child() {
+                child_node.insert_siblings_before(&first_inline);
+            };
+            child_node.remove_from_parent();
+            child = next_node;
+        }
+    }
+
+    fn sanitize_node_attrs(policy: &PluginPolicy<Self>, node: &dom_query::NodeRef) {
+        if policy.attr_exclude_checkers.is_empty() {
+            node.remove_all_attrs();
+            return;
+        }
+
+        let excluded = policy.excluded_attrs(node);
+        let allowed_attrs_str = excluded
+            .iter()
+            .map(|name| name.as_ref())
+            .collect::<Vec<_>>();
+        node.retain_attrs(&allowed_attrs_str);
+    }
+}
+
+pub struct PluginPolicy<T: SanitizePluginDirective = Restrictive> {
+    exclude_checkers: Vec<Box<dyn NodeExclusionChecker>>,
+    remove_checkers: Vec<Box<dyn NodeRemoveChecker>>,
+    attr_exclude_checkers: Vec<Box<dyn AttrExclusionChecker>>,
+    pub(crate) _directive: std::marker::PhantomData<T>,
+}
+
+impl<T: SanitizePluginDirective> PluginPolicy<T> {
+    fn should_exclude(&self, node: &NodeRef) -> bool {
+        for checker in &self.exclude_checkers {
+            if checker.should_exclude(node) {
                 return true;
             }
         }
@@ -45,103 +107,70 @@ impl RestrictivePluginPolicy {
         }
         false
     }
-    fn should_allow_attribute(&self, node: &NodeRef, attr: &Attribute) -> bool {
-        for checker in &self.attribute_allow_checkers {
-            if checker.should_allow_attribute(node, attr) {
+    fn should_exclude_attr(&self, node: &NodeRef, attr: &Attribute) -> bool {
+        for checker in &self.attr_exclude_checkers {
+            if checker.should_exclude_attr(node, attr) {
                 return true;
             }
         }
         false
     }
 
-    fn allowed_attrs(&self, node: &NodeRef) -> Vec<LocalName> {
+    fn excluded_attrs(&self, node: &NodeRef) -> Vec<LocalName> {
         let mut attrs: Vec<LocalName> = vec![];
         for attr in node.attrs().iter() {
-            if self.should_allow_attribute(node, attr) {
+            if self.should_exclude_attr(node, attr) {
                 attrs.push(attr.name.local.clone());
             }
         }
         attrs
     }
 
-    fn sanitize_node_attrs(&self, node: &NodeRef) {
-        if self.attribute_allow_checkers.is_empty() {
-            node.remove_all_attrs();
-            return;
-        }
-
-        let allowed_attrs = self.allowed_attrs(node);
-        let allowed_attrs_str = allowed_attrs
-            .iter()
-            .map(|name| name.as_ref())
-            .collect::<Vec<_>>();
-        node.retain_attrs(&allowed_attrs_str);
-    }
-
     pub fn sanitize_node(&self, node: &NodeRef) {
-        let mut child = node.first_child();
-
-        while let Some(ref child_node) = child {
-            let next_node = child_node.next_sibling();
-
-            if self.should_remove(child_node) {
-                child_node.remove_from_parent();
-                child = next_node;
-                continue;
-            }
-            if child_node.may_have_children() {
-                self.sanitize_node(child_node);
-            }
-            if !child_node.is_element() {
-                child = next_node;
-                continue;
-            }
-            if self.should_allow(child_node) {
-                self.sanitize_node_attrs(child_node);
-                child = next_node;
-                continue;
-            }
-
-            if let Some(first_inline) = child_node.first_child() {
-                child_node.insert_siblings_before(&first_inline);
-            };
-            child_node.remove_from_parent();
-            child = next_node;
-        }
+        T::sanitize_node(self, node);
+        node.normalize();
     }
 }
 
-impl RestrictivePluginPolicy {
-    pub fn builder() -> RestrictiveComplexPolicyBuilder {
-        RestrictiveComplexPolicyBuilder::new()
+impl<T: SanitizePluginDirective> PluginPolicy<T> {
+    pub fn builder() -> PluginPolicyBuilder {
+        PluginPolicyBuilder::new()
     }
 }
 
-pub struct RestrictiveComplexPolicyBuilder {
-    allow_checkers: Vec<Box<dyn NodeAllowChecker>>,
+pub struct PluginPolicyBuilder<T: SanitizePluginDirective = Restrictive> {
+    exclude_checkers: Vec<Box<dyn NodeExclusionChecker>>,
     remove_checkers: Vec<Box<dyn NodeRemoveChecker>>,
-    attribute_allow_checkers: Vec<Box<dyn AttributeAllowChecker>>,
+    attr_exclude_checkers: Vec<Box<dyn AttrExclusionChecker>>,
+    _directive: std::marker::PhantomData<T>,
 }
-
-impl RestrictiveComplexPolicyBuilder {
-    pub fn new() -> Self {
-        RestrictiveComplexPolicyBuilder {
-            allow_checkers: vec![],
+impl<T: SanitizePluginDirective> Default for PluginPolicyBuilder<T> {
+    fn default() -> Self {
+        Self {
+            exclude_checkers: vec![],
             remove_checkers: vec![],
-            attribute_allow_checkers: vec![],
+            attr_exclude_checkers: vec![],
+            _directive: std::marker::PhantomData,
         }
     }
+}
 
-    pub fn allow<T: NodeAllowChecker + 'static>(mut self, checker: T) -> Self {
-        self.allow_checkers.push(Box::new(checker));
+impl<T: SanitizePluginDirective> PluginPolicyBuilder<T> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn exclude<C: NodeExclusionChecker + 'static>(mut self, checker: C) -> Self {
+        self.exclude_checkers.push(Box::new(checker));
         self
     }
 
-    pub fn build(self) -> RestrictivePluginPolicy {
-        RestrictivePluginPolicy {
-            allow_checkers: self.allow_checkers,
+    pub fn build(self) -> PluginPolicy<T> {
+        PluginPolicy {
+            exclude_checkers: self.exclude_checkers,
             remove_checkers: self.remove_checkers,
-            attribute_allow_checkers: self.attribute_allow_checkers,
+            attr_exclude_checkers: self.attr_exclude_checkers,
+            _directive: std::marker::PhantomData,
         }
     }
 }
@@ -152,8 +181,8 @@ mod tests {
     use html5ever::{local_name, LocalName};
 
     struct AllowOnlyHttps;
-    impl NodeAllowChecker for AllowOnlyHttps {
-        fn should_allow(&self, node: &NodeRef) -> bool {
+    impl NodeExclusionChecker for AllowOnlyHttps {
+        fn should_exclude(&self, node: &NodeRef) -> bool {
             if node.has_name("a") {
                 let Some(href) = node.attr("href") else {
                     return false;
@@ -165,8 +194,8 @@ mod tests {
     }
 
     struct AllowNonEmptyDiv;
-    impl NodeAllowChecker for AllowNonEmptyDiv {
-        fn should_allow(&self, node: &NodeRef) -> bool {
+    impl NodeExclusionChecker for AllowNonEmptyDiv {
+        fn should_exclude(&self, node: &NodeRef) -> bool {
             if node.has_name("div") {
                 return !node.text().is_empty();
             }
@@ -175,15 +204,15 @@ mod tests {
     }
 
     struct AllowP;
-    impl NodeAllowChecker for AllowP {
-        fn should_allow(&self, node: &NodeRef) -> bool {
+    impl NodeExclusionChecker for AllowP {
+        fn should_exclude(&self, node: &NodeRef) -> bool {
             node.has_name("p")
         }
     }
 
     struct AllowBaseHtml;
-    impl NodeAllowChecker for AllowBaseHtml {
-        fn should_allow(&self, node: &NodeRef) -> bool {
+    impl NodeExclusionChecker for AllowBaseHtml {
+        fn should_exclude(&self, node: &NodeRef) -> bool {
             let Some(qual_name) = node.qual_name_ref() else {
                 return false;
             };
@@ -194,8 +223,8 @@ mod tests {
         }
     }
     struct AllowCustomLocalName(LocalName);
-    impl NodeAllowChecker for AllowCustomLocalName {
-        fn should_allow(&self, node: &NodeRef) -> bool {
+    impl NodeExclusionChecker for AllowCustomLocalName {
+        fn should_exclude(&self, node: &NodeRef) -> bool {
             let Some(qual_name) = node.qual_name_ref() else {
                 return false;
             };
@@ -203,8 +232,8 @@ mod tests {
         }
     }
     struct AllowCustomLocalNames(Vec<LocalName>);
-    impl NodeAllowChecker for AllowCustomLocalNames {
-        fn should_allow(&self, node: &NodeRef) -> bool {
+    impl NodeExclusionChecker for AllowCustomLocalNames {
+        fn should_exclude(&self, node: &NodeRef) -> bool {
             let Some(qual_name) = node.qual_name_ref() else {
                 return false;
             };
@@ -227,13 +256,13 @@ mod tests {
             </body>
         </html>"#;
         let doc = Document::from(contents);
-        let policy = RestrictivePluginPolicy::builder()
-            .allow(AllowOnlyHttps)
-            .allow(AllowNonEmptyDiv)
-            .allow(AllowP)
-            .allow(AllowBaseHtml)
-            .allow(AllowCustomLocalName(local_name!("title")))
-            .allow(AllowCustomLocalNames(vec![
+        let policy = PluginPolicy::<Restrictive>::builder()
+            .exclude(AllowOnlyHttps)
+            .exclude(AllowNonEmptyDiv)
+            .exclude(AllowP)
+            .exclude(AllowBaseHtml)
+            .exclude(AllowCustomLocalName(local_name!("title")))
+            .exclude(AllowCustomLocalNames(vec![
                 local_name!("mark"),
                 local_name!("b"),
             ]))
