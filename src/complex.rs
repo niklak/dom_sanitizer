@@ -73,12 +73,7 @@ impl SanitizePluginDirective for Restrictive {
             return;
         }
 
-        let excluded = policy.excluded_attrs(node);
-        let allowed_attrs_str = excluded
-            .iter()
-            .map(|name| name.as_ref())
-            .collect::<Vec<_>>();
-        node.retain_attrs(&allowed_attrs_str);
+        policy.exclude_attrs(node, |node, attrs| node.retain_attrs(attrs));
     }
 }
 
@@ -116,14 +111,17 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
         false
     }
 
-    fn excluded_attrs(&self, node: &NodeRef) -> Vec<LocalName> {
-        let mut attrs: Vec<LocalName> = vec![];
-        for attr in node.attrs().iter() {
-            if self.should_exclude_attr(node, attr) {
-                attrs.push(attr.name.local.clone());
-            }
-        }
-        attrs
+    fn exclude_attrs<F>(&self, node: &NodeRef, exclude_fn: F)
+    where
+        F: FnOnce(&NodeRef, &[&str]),
+    {
+        let node_attrs = node.attrs();
+        let attrs: Vec<&str> = node_attrs
+            .iter()
+            .filter(|a| self.should_exclude_attr(node, a))
+            .map(|a| a.name.local.as_ref())
+            .collect();
+        exclude_fn(node, &attrs)
     }
 
     pub fn sanitize_node(&self, node: &NodeRef) {
