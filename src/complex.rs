@@ -1,5 +1,5 @@
 use dom_query::NodeRef;
-use html5ever::{Attribute, LocalName};
+use html5ever::Attribute;
 
 use crate::{Permissive, Restrictive};
 pub trait NodeExclusionChecker {
@@ -32,6 +32,48 @@ pub trait SanitizePluginDirective {
     fn sanitize_node_attrs(policy: &PluginPolicy<Self>, node: &dom_query::NodeRef)
     where
         Self: Sized;
+}
+
+impl SanitizePluginDirective for Permissive {
+    fn sanitize_node(policy: &PluginPolicy<Self>, node: &NodeRef) {
+        if policy.exclude_checkers.is_empty()
+            && policy.remove_checkers.is_empty()
+            && policy.attr_exclude_checkers.is_empty()
+        {
+            return;
+        }
+
+        let mut child = node.first_child();
+
+        while let Some(ref child_node) = child {
+            let next_node = child_node.next_sibling();
+            if policy.should_remove(child_node) {
+                child_node.remove_from_parent();
+                child = next_node;
+                continue;
+            }
+            if child_node.may_have_children() {
+                Self::sanitize_node(policy, child_node);
+            }
+
+            if policy.should_exclude(child_node) {
+                if let Some(first_inline) = child_node.first_child() {
+                    child_node.insert_siblings_before(&first_inline);
+                };
+                child_node.remove_from_parent();
+            }
+            Self::sanitize_node_attrs(policy, child_node);
+            child = next_node;
+        }
+    }
+
+    fn sanitize_node_attrs(policy: &PluginPolicy<Self>, node: &dom_query::NodeRef) {
+        if policy.attr_exclude_checkers.is_empty() {
+            return;
+        }
+
+        policy.exclude_attrs(node, |node, attrs| node.remove_attrs(attrs));
+    }
 }
 
 impl SanitizePluginDirective for Restrictive {

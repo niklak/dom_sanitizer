@@ -1,4 +1,4 @@
-use crate::policy::{Policy, SanitizeDirective};
+use super::core::{Policy, SanitizeDirective};
 use dom_query::{Document, NodeRef};
 
 /// A trait that provides a method to sanitize a DOM node or document

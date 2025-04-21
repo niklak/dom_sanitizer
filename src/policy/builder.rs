@@ -1,4 +1,5 @@
-use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
+use super::core::{AttributeRule, Policy, SanitizeDirective};
+use crate::Permissive;
 
 /// A builder for constructing a [`Policy`] with customizable sanitization rules.
 ///
@@ -19,15 +20,17 @@ use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
 /// use dom_sanitizer::{Permissive, Restrictive};
 ///
 /// let allow_policy = PolicyBuilder::<Permissive>::new()
-///     .exclude_elements(&["script", "style"])
+///     .exclude_elements(&["nav"])
 ///     .exclude_attrs(&["onclick", "onload"])
 ///     .exclude_element_attrs("img", &["loading", "style"])
+///     .remove_elements(&["script", "style"])
 ///     .build();
 ///
 /// let deny_policy = PolicyBuilder::<Restrictive>::new()
 ///     .exclude_elements(&["p", "a", "span", "b", "i", "br"])
 ///     .exclude_attrs(&["id", "class", "role"])
 ///     .exclude_element_attrs("a", &["href", "target"])
+///     .remove_elements(&["script", "style"])
 ///     .build();
 /// ```
 pub struct PolicyBuilder<'a, T: SanitizeDirective = Permissive> {
