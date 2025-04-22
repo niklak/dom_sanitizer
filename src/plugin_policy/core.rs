@@ -1,25 +1,19 @@
-use dom_query::NodeRef;
+use dom_query::{Document, NodeRef};
 use html5ever::Attribute;
 
 use super::builder::PluginPolicyBuilder;
 
 use crate::{Permissive, Restrictive};
-pub trait NodeExclusionChecker {
+pub trait NodeChecker {
     /// Checks if the node is allowed by the policy.
-    fn should_exclude(&self, _node: &NodeRef) -> bool {
+    fn is_match(&self, _node: &NodeRef) -> bool {
         // Default implementation allows all nodes.
         false
     }
 }
 
-pub trait AttrExclusionChecker {
+pub trait AttrChecker {
     fn should_exclude_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool {
-        false
-    }
-}
-
-pub trait NodeRemoveChecker {
-    fn should_remove(&self, _node: &NodeRef) -> bool {
         false
     }
 }
@@ -97,6 +91,7 @@ impl SanitizePluginDirective for Restrictive {
                 child = next_node;
                 continue;
             }
+            // TODO: Call should_remove_restrictive
             if policy.should_exclude(child_node) {
                 Self::sanitize_node_attrs(policy, child_node);
                 child = next_node;
@@ -122,16 +117,16 @@ impl SanitizePluginDirective for Restrictive {
 }
 
 pub struct PluginPolicy<T: SanitizePluginDirective = Restrictive> {
-    pub exclude_checkers: Vec<Box<dyn NodeExclusionChecker>>,
-    pub remove_checkers: Vec<Box<dyn NodeRemoveChecker>>,
-    pub attr_exclude_checkers: Vec<Box<dyn AttrExclusionChecker>>,
+    pub exclude_checkers: Vec<Box<dyn NodeChecker>>,
+    pub remove_checkers: Vec<Box<dyn NodeChecker>>,
+    pub attr_exclude_checkers: Vec<Box<dyn AttrChecker>>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
 impl<T: SanitizePluginDirective> PluginPolicy<T> {
     fn should_exclude(&self, node: &NodeRef) -> bool {
         for checker in &self.exclude_checkers {
-            if checker.should_exclude(node) {
+            if checker.is_match(node) {
                 return true;
             }
         }
@@ -140,7 +135,7 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
 
     fn should_remove(&self, node: &NodeRef) -> bool {
         for checker in &self.remove_checkers {
-            if checker.should_remove(node) {
+            if checker.is_match(node) {
                 return true;
             }
         }
@@ -168,9 +163,18 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
         exclude_fn(node, &attrs)
     }
 
+    /// Sanitizes a node by applying the policy rules according to the directive type.
+    ///
+    /// For [Permissive] directive: Removes elements and attributes specified in the policy.
+    /// For [Restrictive] directive: Keeps only elements and attributes specified in the policy.
     pub fn sanitize_node(&self, node: &NodeRef) {
         T::sanitize_node(self, node);
         node.normalize();
+    }
+
+    /// Sanitizes the attributes of a node by applying the policy rules according to the directive type.
+    pub fn sanitize_document(&self, document: &Document) {
+        self.sanitize_node(&document.root());
     }
 }
 

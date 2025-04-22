@@ -1,14 +1,14 @@
 use super::core::{
-    AttrExclusionChecker, NodeExclusionChecker, NodeRemoveChecker, PluginPolicy,
+    AttrChecker, NodeChecker, PluginPolicy,
     SanitizePluginDirective
 };
 
 use crate::Restrictive;
 
 pub struct PluginPolicyBuilder<T: SanitizePluginDirective = Restrictive> {
-    exclude_checkers: Vec<Box<dyn NodeExclusionChecker>>,
-    remove_checkers: Vec<Box<dyn NodeRemoveChecker>>,
-    attr_exclude_checkers: Vec<Box<dyn AttrExclusionChecker>>,
+    exclude_checkers: Vec<Box<dyn NodeChecker>>,
+    remove_checkers: Vec<Box<dyn NodeChecker>>,
+    attr_exclude_checkers: Vec<Box<dyn AttrChecker>>,
     _directive: std::marker::PhantomData<T>,
 }
 impl<T: SanitizePluginDirective> Default for PluginPolicyBuilder<T> {
@@ -27,8 +27,18 @@ impl<T: SanitizePluginDirective> PluginPolicyBuilder<T> {
         Self::default()
     }
 
-    pub fn exclude<C: NodeExclusionChecker + 'static>(mut self, checker: C) -> Self {
+    pub fn exclude<C: NodeChecker + 'static>(mut self, checker: C) -> Self {
         self.exclude_checkers.push(Box::new(checker));
+        self
+    }
+
+    pub fn remove<C: NodeChecker + 'static>(mut self, checker: C) -> Self {
+        self.remove_checkers.push(Box::new(checker));
+        self
+    }
+    
+    pub fn exclude_attr<C: AttrChecker + 'static>(mut self, checker: C) -> Self {
+        self.attr_exclude_checkers.push(Box::new(checker));
         self
     }
 

@@ -1,13 +1,16 @@
 use dom_query::{Document, NodeRef};
 use html5ever::{local_name, LocalName};
 use dom_sanitizer::plugin_policy::{
-    AttrExclusionChecker, NodeExclusionChecker, NodeRemoveChecker, PluginPolicy,
+    preset, AttrChecker, NodeChecker, PluginPolicy
 };
-use dom_sanitizer::Restrictive;
+use dom_sanitizer::{Permissive, Restrictive};
+
+mod data;
+use data::PARAGRAPH_CONTENTS;
 
 struct AllowOnlyHttps;
-impl NodeExclusionChecker for AllowOnlyHttps {
-    fn should_exclude(&self, node: &NodeRef) -> bool {
+impl NodeChecker for AllowOnlyHttps {
+    fn is_match(&self, node: &NodeRef) -> bool {
         if node.has_name("a") {
             let Some(href) = node.attr("href") else {
                 return false;
@@ -19,8 +22,8 @@ impl NodeExclusionChecker for AllowOnlyHttps {
 }
 
 struct AllowNonEmptyDiv;
-impl NodeExclusionChecker for AllowNonEmptyDiv {
-    fn should_exclude(&self, node: &NodeRef) -> bool {
+impl NodeChecker for AllowNonEmptyDiv {
+    fn is_match(&self, node: &NodeRef) -> bool {
         if node.has_name("div") {
             return !node.text().is_empty();
         }
@@ -29,36 +32,23 @@ impl NodeExclusionChecker for AllowNonEmptyDiv {
 }
 
 struct AllowP;
-impl NodeExclusionChecker for AllowP {
-    fn should_exclude(&self, node: &NodeRef) -> bool {
+impl NodeChecker for AllowP {
+    fn is_match(&self, node: &NodeRef) -> bool {
         node.has_name("p")
     }
 }
-
-struct AllowBaseHtml;
-impl NodeExclusionChecker for AllowBaseHtml {
-    fn should_exclude(&self, node: &NodeRef) -> bool {
-        let Some(qual_name) = node.qual_name_ref() else {
-            return false;
-        };
-        matches!(
-            qual_name.local,
-            local_name!("html") | local_name!("head") | local_name!("body")
-        )
-    }
-}
-struct AllowCustomLocalName(LocalName);
-impl NodeExclusionChecker for AllowCustomLocalName {
-    fn should_exclude(&self, node: &NodeRef) -> bool {
+struct ExcludeLocalName(LocalName);
+impl NodeChecker for ExcludeLocalName {
+    fn is_match(&self, node: &NodeRef) -> bool {
         let Some(qual_name) = node.qual_name_ref() else {
             return false;
         };
         qual_name.local == self.0
     }
 }
-struct AllowCustomLocalNames(Vec<LocalName>);
-impl NodeExclusionChecker for AllowCustomLocalNames {
-    fn should_exclude(&self, node: &NodeRef) -> bool {
+struct MatchLocalNames(Vec<LocalName>);
+impl NodeChecker for MatchLocalNames {
+    fn is_match(&self, node: &NodeRef) -> bool {
         let Some(qual_name) = node.qual_name_ref() else {
             return false;
         };
@@ -67,27 +57,16 @@ impl NodeExclusionChecker for AllowCustomLocalNames {
 }
 
 #[test]
-fn test_restrictive_complex_policy() {
-    let contents: &str = r#"
-    <!DOCTYPE html>
-    <html>
-        <head><title>Test</title></head>
-        <body>
-            <div><p role="paragraph">The first paragraph contains <a href="/first" role="link">the first link</a>.</p></div>
-            <div><p role="paragraph">The second paragraph contains <a href="/second" role="link">the second link</a>.</p></div>
-            <div><p role="paragraph">The third paragraph contains <a href="/third" role="link">the third link</a>.</p></div>
-            <div><p role="paragraph"><mark>highlighted text</mark>, <b>bold text</b></p></div>
-            <div></div>
-        </body>
-    </html>"#;
-    let doc = Document::from(contents);
+fn test_restrictive_plugin_policy() {
+
+    let doc = Document::from(PARAGRAPH_CONTENTS);
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         .exclude(AllowOnlyHttps)
         .exclude(AllowNonEmptyDiv)
         .exclude(AllowP)
-        .exclude(AllowBaseHtml)
-        .exclude(AllowCustomLocalName(local_name!("title")))
-        .exclude(AllowCustomLocalNames(vec![
+        .exclude(preset::AllowBasicHtml)
+        .exclude(ExcludeLocalName(local_name!("title")))
+        .exclude(MatchLocalNames(vec![
             local_name!("mark"),
             local_name!("b"),
         ]))
@@ -108,4 +87,38 @@ fn test_restrictive_complex_policy() {
     assert!(doc.select("head title").exists());
     assert!(doc.select("p mark").exists());
     assert!(doc.select("p b").exists());
+}
+
+
+#[test]
+fn test_permissive_plugin_policy_remove() {
+    let contents = include_str!("../test-pages/table.html");
+    let doc = Document::from(contents);
+    let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
+        .exclude(MatchLocalNames(vec![
+            local_name!("style"),
+        ]))
+        .build();
+
+    
+    assert!(doc.select("style").exists());
+
+    policy.sanitize_document(&doc);
+
+    assert!(!doc.select("style").exists());
+
+    // After sanitization, we got style inner contents without the `style` elements -- as a text node.
+    assert!(doc.html().contains("border-collapse: collapse"));
+
+    // For such cases it's better to use the `remove_elements()` method.
+    let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
+    .remove(MatchLocalNames(vec![
+        local_name!("style"),
+    ]))
+    .build();
+    let doc = Document::from(contents);
+    policy.sanitize_document(&doc);
+    // in that case style elements are removed from the DOM tree, including their text content.
+    assert!(!doc.select("style").exists());
+    assert!(!doc.html().contains("border-collapse: collapse"));
 }
