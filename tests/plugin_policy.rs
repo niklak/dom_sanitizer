@@ -58,7 +58,7 @@ impl NodeChecker for MatchLocalNames {
 }
 struct SuspiciousAttr;
 impl AttrChecker for SuspiciousAttr {
-    fn should_exclude_attr(&self, node: &NodeRef, attr: &html5ever::Attribute) -> bool {
+    fn is_match_attr(&self, _node: &NodeRef, attr: &html5ever::Attribute) -> bool {
 
         let attr_name = attr.name.local.as_ref();
         if attr_name != "onclick" && attr_name.starts_with("on") {

@@ -13,7 +13,7 @@ pub trait NodeChecker {
 }
 
 pub trait AttrChecker {
-    fn should_exclude_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool {
+    fn is_match_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool {
         false
     }
 }
@@ -143,7 +143,7 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
     }
     fn should_exclude_attr(&self, node: &NodeRef, attr: &Attribute) -> bool {
         for checker in &self.attr_exclude_checkers {
-            if checker.should_exclude_attr(node, attr) {
+            if checker.is_match_attr(node, attr) {
                 return true;
             }
         }
