@@ -62,6 +62,20 @@ impl AttrChecker for SuspiciousAttr {
     }
 }
 
+struct RoleAttr;
+impl AttrChecker for RoleAttr {
+    fn is_match_attr(&self, _node: &NodeRef, attr: &html5ever::Attribute) -> bool {
+        attr.name.local == local_name!("role")
+    }
+}
+
+struct HrefAttr;
+impl AttrChecker for HrefAttr {
+    fn is_match_attr(&self, node: &NodeRef, attr: &html5ever::Attribute) -> bool {
+        node.has_name("a") && attr.name.local == local_name!("href")
+    }
+}
+
 struct RegexContentCountMatcher {
     element_scope: LocalName,
     regex: Regex,
@@ -123,6 +137,21 @@ fn test_restrictive_plugin_policy() {
     assert!(doc.select("head title").exists());
     assert!(doc.select("p mark").exists());
     assert!(doc.select("p b").exists());
+    assert!(!doc.select("p[role]").exists());
+}
+
+#[test]
+fn test_restrictive_policy_attrs() {
+    let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
+        .exclude(preset::MatchLocalNames(vec![local_name!("p"), local_name!("a")]))
+        .exclude_attr(RoleAttr)
+        .exclude_attr(HrefAttr)
+        .build();
+    let doc = Document::from(PARAGRAPH_CONTENTS);
+    policy.sanitize_document(&doc);
+    assert!(!doc.select("div").exists());
+    assert_eq!(doc.select("p > a[href]").length(), 3);
+    assert_eq!(doc.select("[role]").length(), 7);
 }
 
 #[test]
