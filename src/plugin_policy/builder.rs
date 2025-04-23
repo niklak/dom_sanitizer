@@ -1,7 +1,4 @@
-use super::core::{
-    AttrChecker, NodeChecker, PluginPolicy,
-    SanitizePluginDirective
-};
+use super::core::{AttrChecker, NodeChecker, PluginPolicy, SanitizePluginDirective};
 
 use crate::Restrictive;
 
@@ -36,7 +33,7 @@ impl<T: SanitizePluginDirective> PluginPolicyBuilder<T> {
         self.remove_checkers.push(Box::new(checker));
         self
     }
-    
+
     pub fn exclude_attr<C: AttrChecker + 'static>(mut self, checker: C) -> Self {
         self.attr_exclude_checkers.push(Box::new(checker));
         self

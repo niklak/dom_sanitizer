@@ -1,9 +1,7 @@
 use dom_query::{Document, NodeRef};
-use html5ever::{local_name, LocalName};
-use dom_sanitizer::plugin_policy::{
-    preset, AttrChecker, NodeChecker, PluginPolicy
-};
+use dom_sanitizer::plugin_policy::{preset, AttrChecker, NodeChecker, PluginPolicy};
 use dom_sanitizer::{Permissive, Restrictive};
+use html5ever::{local_name, LocalName};
 
 mod data;
 use data::PARAGRAPH_CONTENTS;
@@ -59,7 +57,6 @@ impl NodeChecker for MatchLocalNames {
 struct SuspiciousAttr;
 impl AttrChecker for SuspiciousAttr {
     fn is_match_attr(&self, _node: &NodeRef, attr: &html5ever::Attribute) -> bool {
-
         let attr_name = attr.name.local.as_ref();
         if attr_name != "onclick" && attr_name.starts_with("on") {
             return true;
@@ -68,7 +65,7 @@ impl AttrChecker for SuspiciousAttr {
     }
 }
 
-struct RegexContentCountMatcher{
+struct RegexContentCountMatcher {
     element_scope: LocalName,
     regex: Regex,
     threshold: usize,
@@ -96,14 +93,13 @@ impl NodeChecker for RegexContentCountMatcher {
         if html.is_empty() {
             return false;
         }
-        
+
         self.regex.find_iter(&html).count() >= self.threshold
     }
 }
 
 #[test]
 fn test_restrictive_plugin_policy() {
-
     let doc = Document::from(PARAGRAPH_CONTENTS);
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         .exclude(AllowOnlyHttps)
@@ -111,10 +107,7 @@ fn test_restrictive_plugin_policy() {
         .exclude(AllowP)
         .exclude(preset::AllowBasicHtml)
         .exclude(ExcludeLocalName(local_name!("title")))
-        .exclude(MatchLocalNames(vec![
-            local_name!("mark"),
-            local_name!("b"),
-        ]))
+        .exclude(MatchLocalNames(vec![local_name!("mark"), local_name!("b")]))
         .build();
 
     policy.sanitize_node(&doc.root());
@@ -134,18 +127,14 @@ fn test_restrictive_plugin_policy() {
     assert!(doc.select("p b").exists());
 }
 
-
 #[test]
 fn test_permissive_plugin_policy_remove() {
     let contents = include_str!("../test-pages/table.html");
     let doc = Document::from(contents);
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
-        .exclude(MatchLocalNames(vec![
-            local_name!("style"),
-        ]))
+        .exclude(MatchLocalNames(vec![local_name!("style")]))
         .build();
 
-    
     assert!(doc.select("style").exists());
 
     policy.sanitize_document(&doc);
@@ -157,10 +146,8 @@ fn test_permissive_plugin_policy_remove() {
 
     // For such cases it's better to use the `remove_elements()` method.
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
-    .remove(MatchLocalNames(vec![
-        local_name!("style"),
-    ]))
-    .build();
+        .remove(MatchLocalNames(vec![local_name!("style")]))
+        .build();
     let doc = Document::from(contents);
     policy.sanitize_document(&doc);
     // in that case style elements are removed from the DOM tree, including their text content.
@@ -184,11 +171,9 @@ fn test_permissive_plugin_policy_exclude_attr() {
     let doc = Document::from(contents);
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
         .exclude_attr(SuspiciousAttr)
-        .remove(MatchLocalNames(vec![
-            local_name!("style"),
-        ]))
+        .remove(MatchLocalNames(vec![local_name!("style")]))
         .build();
-    
+
     assert!(doc.select("style").exists());
     assert!(doc.select("a[onanimationend]").exists());
     policy.sanitize_document(&doc);
@@ -196,7 +181,6 @@ fn test_permissive_plugin_policy_exclude_attr() {
     assert!(!doc.select("a[onanimationend]").exists());
     assert!(doc.select("a").exists());
 }
-
 
 #[test]
 fn test_permissive_plugin_policy_remove_by_regex() {
@@ -227,10 +211,14 @@ fn test_permissive_plugin_policy_remove_by_regex() {
 
     let doc = Document::from(contents);
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
-        .remove(RegexContentCountMatcher::new(r"(?i)shop now|amazing deals|offer", 3, "div"))
+        .remove(RegexContentCountMatcher::new(
+            r"(?i)shop now|amazing deals|offer",
+            3,
+            "div",
+        ))
         .build();
     assert!(doc.select("div.ad-block").exists());
-    assert_eq!(doc.select("div").length(),3);
+    assert_eq!(doc.select("div").length(), 3);
     assert_eq!(doc.select("p").length(), 3);
 
     policy.sanitize_document(&doc);

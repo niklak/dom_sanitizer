@@ -10,4 +10,3 @@ pub static PARAGRAPH_CONTENTS: &str = r#"
         <div></div>
     </body>
 </html>"#;
-

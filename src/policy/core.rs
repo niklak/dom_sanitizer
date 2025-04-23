@@ -14,8 +14,6 @@ fn is_node_name_in(names: &[&str], node: &NodeRef) -> bool {
     names.contains(&qual_name.local.as_ref())
 }
 
-
-
 /// A trait for sanitization directives, defines methods for node and attribute sanitization.
 pub trait SanitizeDirective {
     /// Sanitizes a node by removing elements and attributes based on the policy.
@@ -57,8 +55,10 @@ impl SanitizeDirective for Permissive {
                     child_node.insert_siblings_before(&first_inline);
                 };
                 child_node.remove_from_parent();
+            } else {
+                Self::sanitize_node_attrs(policy, child_node);
             }
-            Self::sanitize_node_attrs(policy, child_node);
+
             child = next_node;
         }
     }
