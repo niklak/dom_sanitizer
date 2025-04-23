@@ -1,3 +1,5 @@
+use std::iter::Rev;
+
 use dom_query::{Document, NodeRef};
 use dom_sanitizer::plugin_policy::{preset, AttrChecker, NodeChecker, PluginPolicy};
 use dom_sanitizer::{Permissive, Restrictive};
@@ -7,14 +9,28 @@ mod data;
 use data::PARAGRAPH_CONTENTS;
 use regex::Regex;
 
-struct AllowOnlyHttps;
-impl NodeChecker for AllowOnlyHttps {
+
+struct ExcludeOnlyHttps;
+impl NodeChecker for ExcludeOnlyHttps {
     fn is_match(&self, node: &NodeRef) -> bool {
         if node.has_name("a") {
             let Some(href) = node.attr("href") else {
                 return false;
             };
             return href.starts_with("https://");
+        }
+        false
+    }
+}
+
+struct ExcludeNoHttps;
+impl NodeChecker for ExcludeNoHttps {
+    fn is_match(&self, node: &NodeRef) -> bool {
+        if node.has_name("a") {
+            let Some(href) = node.attr("href") else {
+                return false;
+            };
+            return !href.starts_with("https://");
         }
         false
     }
@@ -36,24 +52,7 @@ impl NodeChecker for AllowP {
         node.has_name("p")
     }
 }
-struct ExcludeLocalName(LocalName);
-impl NodeChecker for ExcludeLocalName {
-    fn is_match(&self, node: &NodeRef) -> bool {
-        let Some(qual_name) = node.qual_name_ref() else {
-            return false;
-        };
-        qual_name.local == self.0
-    }
-}
-struct MatchLocalNames(Vec<LocalName>);
-impl NodeChecker for MatchLocalNames {
-    fn is_match(&self, node: &NodeRef) -> bool {
-        let Some(qual_name) = node.qual_name_ref() else {
-            return false;
-        };
-        self.0.contains(&qual_name.local)
-    }
-}
+
 struct SuspiciousAttr;
 impl AttrChecker for SuspiciousAttr {
     fn is_match_attr(&self, _node: &NodeRef, attr: &html5ever::Attribute) -> bool {
@@ -102,12 +101,12 @@ impl NodeChecker for RegexContentCountMatcher {
 fn test_restrictive_plugin_policy() {
     let doc = Document::from(PARAGRAPH_CONTENTS);
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
-        .exclude(AllowOnlyHttps)
+        .exclude(ExcludeOnlyHttps)
         .exclude(AllowNonEmptyDiv)
         .exclude(AllowP)
         .exclude(preset::AllowBasicHtml)
-        .exclude(ExcludeLocalName(local_name!("title")))
-        .exclude(MatchLocalNames(vec![local_name!("mark"), local_name!("b")]))
+        .exclude(preset::MatchLocalName(local_name!("title")))
+        .exclude(preset::MatchLocalNames(vec![local_name!("mark"), local_name!("b")]))
         .build();
 
     policy.sanitize_node(&doc.root());
@@ -116,6 +115,7 @@ fn test_restrictive_plugin_policy() {
 
     // All links are stripped, because it's not clear if they are secure.
     assert_eq!(doc.select("a").length(), 0);
+    assert_eq!(doc.html().matches("link").count(), 3);
 
     // html, head, body are always kept
     assert!(doc.select("html").exists());
@@ -128,11 +128,35 @@ fn test_restrictive_plugin_policy() {
 }
 
 #[test]
+fn test_restrictive_plugin_policy_remove() {
+    let doc = Document::from(PARAGRAPH_CONTENTS);
+    let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
+        .remove(ExcludeNoHttps)
+        .exclude(preset::AllowBasicHtml)
+        .build();
+
+    policy.sanitize_node(&doc.root());
+    // Divs are not empty, so they are allowed
+    assert_eq!(doc.select("div").length(), 0);
+
+    // All links are stripped, because it's not clear if they are secure.
+    assert_eq!(doc.select("a").length(), 0);
+    assert_eq!(doc.html().matches("link").count(), 0);
+
+    // html, head, body are always kept
+    assert!(doc.select("html").exists());
+    assert!(doc.select("head").exists());
+    assert!(doc.select("body").exists());
+
+}
+
+
+#[test]
 fn test_permissive_plugin_policy_remove() {
     let contents = include_str!("../test-pages/table.html");
     let doc = Document::from(contents);
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
-        .exclude(MatchLocalNames(vec![local_name!("style")]))
+        .exclude(preset::MatchLocalNames(vec![local_name!("style")]))
         .build();
 
     assert!(doc.select("style").exists());
@@ -146,7 +170,7 @@ fn test_permissive_plugin_policy_remove() {
 
     // For such cases it's better to use the `remove_elements()` method.
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
-        .remove(MatchLocalNames(vec![local_name!("style")]))
+        .remove(preset::MatchLocalNames(vec![local_name!("style")]))
         .build();
     let doc = Document::from(contents);
     policy.sanitize_document(&doc);
@@ -186,7 +210,7 @@ fn test_permissive_plugin_policy_exclude_attr() {
     let doc = Document::from(contents);
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
         .exclude_attr(SuspiciousAttr)
-        .remove(MatchLocalNames(vec![local_name!("style")]))
+        .remove(preset::MatchLocalNames(vec![local_name!("style")]))
         .build();
 
     assert!(doc.select("style").exists());
