@@ -6,16 +6,11 @@ use super::builder::PluginPolicyBuilder;
 use crate::{Permissive, Restrictive};
 pub trait NodeChecker {
     /// Checks if the node is allowed by the policy.
-    fn is_match(&self, _node: &NodeRef) -> bool {
-        // Default implementation allows all nodes.
-        false
-    }
+    fn is_match(&self, _node: &NodeRef) -> bool;
 }
 
 pub trait AttrChecker {
-    fn is_match_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool {
-        false
-    }
+    fn is_match_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool;
 }
 
 /// A trait for sanitization directives, defines methods for node and attribute sanitization.
