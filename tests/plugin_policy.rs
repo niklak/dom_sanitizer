@@ -1,5 +1,3 @@
-use std::iter::Rev;
-
 use dom_query::{Document, NodeRef};
 use dom_sanitizer::plugin_policy::{preset, AttrChecker, NodeChecker, PluginPolicy};
 use dom_sanitizer::{Permissive, Restrictive};
