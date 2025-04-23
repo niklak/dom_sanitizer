@@ -45,8 +45,8 @@ impl AttrChecker for SimpleMatchAttribute {
         let Some(ref element_scope) = self.element_scope else {
             return attr.name.local == self.attribute_name;
         };
-
-        if node.qual_name_ref().map_or(false,|name| &name.local != element_scope) {
+        // Only proceed if node's local name matches the element scope
+        if !node.qual_name_ref().map_or(false,|name| &name.local == element_scope) {
             return false;
         }
         attr.name.local == self.attribute_name
