@@ -156,6 +156,21 @@ fn test_permissive_plugin_policy_remove() {
 }
 
 #[test]
+fn test_permissive_plugin_policy_unspecified() {
+    let contents = include_str!("../test-pages/table.html");
+    let doc = Document::from(contents);
+    let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
+        .build();
+
+    let total_nodes_before = doc.root().descendants_it().count();
+    policy.sanitize_document(&doc);
+    let total_nodes_after = doc.root().descendants_it().count();
+    assert_eq!(total_nodes_before, total_nodes_after);
+
+}
+
+
+#[test]
 fn test_permissive_plugin_policy_exclude_attr() {
     let contents: &str = r#"
 <!DOCTYPE html>
