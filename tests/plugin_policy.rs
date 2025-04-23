@@ -1,4 +1,5 @@
 use dom_query::{Document, NodeRef};
+use dom_sanitizer::plugin_policy::preset::SimpleMatchAttribute;
 use dom_sanitizer::plugin_policy::{preset, AttrChecker, NodeChecker, PluginPolicy};
 use dom_sanitizer::{Permissive, Restrictive};
 use html5ever::{local_name, LocalName};
@@ -59,20 +60,6 @@ impl AttrChecker for SuspiciousAttr {
             return true;
         }
         false
-    }
-}
-
-struct RoleAttr;
-impl AttrChecker for RoleAttr {
-    fn is_match_attr(&self, _node: &NodeRef, attr: &html5ever::Attribute) -> bool {
-        attr.name.local == local_name!("role")
-    }
-}
-
-struct HrefAttr;
-impl AttrChecker for HrefAttr {
-    fn is_match_attr(&self, node: &NodeRef, attr: &html5ever::Attribute) -> bool {
-        node.has_name("a") && attr.name.local == local_name!("href")
     }
 }
 
@@ -144,8 +131,8 @@ fn test_restrictive_plugin_policy() {
 fn test_restrictive_policy_attrs() {
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         .exclude(preset::MatchLocalNames(vec![local_name!("p"), local_name!("a")]))
-        .exclude_attr(RoleAttr)
-        .exclude_attr(HrefAttr)
+        .exclude_attr(SimpleMatchAttribute::new(None, local_name!("role")))
+        .exclude_attr(SimpleMatchAttribute::new(None, local_name!("href")))
         .build();
     let doc = Document::from(PARAGRAPH_CONTENTS);
     policy.sanitize_document(&doc);
