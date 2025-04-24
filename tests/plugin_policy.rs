@@ -12,13 +12,10 @@ use regex::Regex;
 struct ExcludeOnlyHttps;
 impl NodeChecker for ExcludeOnlyHttps {
     fn is_match(&self, node: &NodeRef) -> bool {
-        if node.has_name("a") {
-            let Some(href) = node.attr("href") else {
-                return false;
-            };
-            return href.starts_with("https://");
-        }
-        false
+        node.has_name("a")
+            && node
+                .attr("href")
+                .map_or(false, |href| href.starts_with("https://"))
     }
 }
 
@@ -123,7 +120,7 @@ fn test_restrictive_plugin_policy() {
     assert!(doc.select("html").exists());
     assert!(doc.select("head").exists());
     assert!(doc.select("body").exists());
-    // title is stripped, because it's not allowed by the policy
+    // title is preserved, because it's excluded from the Restrictive policy
     assert!(doc.select("head title").exists());
     assert!(doc.select("p mark").exists());
     assert!(doc.select("p b").exists());
