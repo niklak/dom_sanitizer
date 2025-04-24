@@ -46,8 +46,8 @@
 ///     .exclude_elements(&["h1", "h2", "h3", "p", "a"])
 ///     .build();
 /// ```
-use crate::policy::Policy;
-use crate::policy::SanitizeDirective;
+use super::core::Policy;
+use super::core::SanitizeDirective;
 
 /// Excludes all table-related elements, such as `table`, `caption`, `colgroup`, `col`, `th`,
 /// `tbody`, `tr`, `td`, and `tfoot`, from the base sanitization policy.

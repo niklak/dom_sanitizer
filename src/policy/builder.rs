@@ -1,4 +1,5 @@
-use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
+use super::core::{AttributeRule, Policy, SanitizeDirective};
+use crate::Restrictive;
 
 /// A builder for constructing a [`Policy`] with customizable sanitization rules.
 ///
@@ -10,7 +11,7 @@ use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
 ///
 /// - `'a`: The lifetime of the references to elements and attributes.
 /// - `T`: The sanitization directive, which must implement the [`SanitizeDirective`] trait.
-///   Defaults to [`Permissive`].
+///   Defaults to [`Restrictive`].
 ///
 /// # Examples
 ///
@@ -19,18 +20,20 @@ use crate::policy::{AttributeRule, Permissive, Policy, SanitizeDirective};
 /// use dom_sanitizer::{Permissive, Restrictive};
 ///
 /// let allow_policy = PolicyBuilder::<Permissive>::new()
-///     .exclude_elements(&["script", "style"])
+///     .exclude_elements(&["nav"])
 ///     .exclude_attrs(&["onclick", "onload"])
 ///     .exclude_element_attrs("img", &["loading", "style"])
+///     .remove_elements(&["script", "style"])
 ///     .build();
 ///
 /// let deny_policy = PolicyBuilder::<Restrictive>::new()
 ///     .exclude_elements(&["p", "a", "span", "b", "i", "br"])
 ///     .exclude_attrs(&["id", "class", "role"])
 ///     .exclude_element_attrs("a", &["href", "target"])
+///     .remove_elements(&["script", "style"])
 ///     .build();
 /// ```
-pub struct PolicyBuilder<'a, T: SanitizeDirective = Permissive> {
+pub struct PolicyBuilder<'a, T: SanitizeDirective = Restrictive> {
     /// A list of rules for excluding attributes.
     attr_rules: Vec<AttributeRule<'a>>,
     /// A list of element names to exclude from the base policy.
