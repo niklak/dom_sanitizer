@@ -136,7 +136,7 @@ fn test_restrictive_policy_attrs() {
             local_name!("a"),
         ]))
         .exclude_attr(SimpleMatchAttribute::new(None, local_name!("role")))
-        .exclude_attr(SimpleMatchAttribute::new(None, local_name!("href")))
+        .exclude_attr(SimpleMatchAttribute::new(Some(local_name!("a")), local_name!("href")))
         .build();
     let doc = Document::from(PARAGRAPH_CONTENTS);
     policy.sanitize_document(&doc);
