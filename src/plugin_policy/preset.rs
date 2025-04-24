@@ -20,20 +20,21 @@ impl NodeChecker for AllowBasicHtml {
 pub struct MatchLocalName(pub LocalName);
 impl NodeChecker for MatchLocalName {
     fn is_match(&self, node: &NodeRef) -> bool {
-        node.qual_name_ref().map_or(false, |qual_name| self.0 == qual_name.local)
-
+        node.qual_name_ref()
+            .map_or(false, |qual_name| self.0 == qual_name.local)
     }
 }
 /// Matches nodes with local names contained in the provided vector.
 pub struct MatchLocalNames(pub Vec<LocalName>);
 impl NodeChecker for MatchLocalNames {
     fn is_match(&self, node: &NodeRef) -> bool {
-        node.qual_name_ref().map_or(false, |qual_name| self.0.contains(&qual_name.local))
+        node.qual_name_ref()
+            .map_or(false, |qual_name| self.0.contains(&qual_name.local))
     }
 }
 
 /// Matches nodes with a specific local name and checks if the attribute matches.
-pub struct SimpleMatchAttribute{
+pub struct SimpleMatchAttribute {
     /// The local name of the element to match. If `None`, matches any element.
     pub element_scope: Option<LocalName>,
     /// The local name of the attribute to match.
@@ -46,7 +47,10 @@ impl AttrChecker for SimpleMatchAttribute {
             return attr.name.local == self.attribute_name;
         };
         // Only proceed if node's local name matches the element scope
-        if !node.qual_name_ref().map_or(false,|name| &name.local == element_scope) {
+        if !node
+            .qual_name_ref()
+            .map_or(false, |name| &name.local == element_scope)
+        {
             return false;
         }
         attr.name.local == self.attribute_name

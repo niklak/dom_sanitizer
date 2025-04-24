@@ -1,5 +1,5 @@
 use super::core::{AttributeRule, Policy, SanitizeDirective};
-use crate::Permissive;
+use crate::Restrictive;
 
 /// A builder for constructing a [`Policy`] with customizable sanitization rules.
 ///
@@ -11,7 +11,7 @@ use crate::Permissive;
 ///
 /// - `'a`: The lifetime of the references to elements and attributes.
 /// - `T`: The sanitization directive, which must implement the [`SanitizeDirective`] trait.
-///   Defaults to [`Permissive`].
+///   Defaults to [`Restrictive`].
 ///
 /// # Examples
 ///
@@ -33,7 +33,7 @@ use crate::Permissive;
 ///     .remove_elements(&["script", "style"])
 ///     .build();
 /// ```
-pub struct PolicyBuilder<'a, T: SanitizeDirective = Permissive> {
+pub struct PolicyBuilder<'a, T: SanitizeDirective = Restrictive> {
     /// A list of rules for excluding attributes.
     attr_rules: Vec<AttributeRule<'a>>,
     /// A list of element names to exclude from the base policy.

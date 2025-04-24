@@ -136,7 +136,7 @@ pub struct AttributeRule<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Policy<'a, T: SanitizeDirective = Permissive> {
+pub struct Policy<'a, T: SanitizeDirective = Restrictive> {
     /// The list of excluding rules for attributes.
     /// For [Permissive] directive: attributes to remove
     /// For [Restrictive] directive: attributes to keep

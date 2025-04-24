@@ -1,4 +1,5 @@
 use dom_query::{Document, NodeRef};
+use dom_sanitizer::plugin_policy::core::{PermissivePluginPolicy, RestrictivePluginPolicy};
 use dom_sanitizer::plugin_policy::preset::SimpleMatchAttribute;
 use dom_sanitizer::plugin_policy::{preset, AttrChecker, NodeChecker, PluginPolicy};
 use dom_sanitizer::{Permissive, Restrictive};
@@ -7,7 +8,6 @@ use html5ever::{local_name, LocalName};
 mod data;
 use data::PARAGRAPH_CONTENTS;
 use regex::Regex;
-
 
 struct ExcludeOnlyHttps;
 impl NodeChecker for ExcludeOnlyHttps {
@@ -45,8 +45,8 @@ impl NodeChecker for AllowNonEmptyDiv {
     }
 }
 
-struct AllowP;
-impl NodeChecker for AllowP {
+struct ExcludeP;
+impl NodeChecker for ExcludeP {
     fn is_match(&self, node: &NodeRef) -> bool {
         node.has_name("p")
     }
@@ -102,10 +102,13 @@ fn test_restrictive_plugin_policy() {
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         .exclude(ExcludeOnlyHttps)
         .exclude(AllowNonEmptyDiv)
-        .exclude(AllowP)
+        .exclude(ExcludeP)
         .exclude(preset::AllowBasicHtml)
         .exclude(preset::MatchLocalName(local_name!("title")))
-        .exclude(preset::MatchLocalNames(vec![local_name!("mark"), local_name!("b")]))
+        .exclude(preset::MatchLocalNames(vec![
+            local_name!("mark"),
+            local_name!("b"),
+        ]))
         .build();
 
     policy.sanitize_node(&doc.root());
@@ -130,7 +133,10 @@ fn test_restrictive_plugin_policy() {
 #[test]
 fn test_restrictive_policy_attrs() {
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
-        .exclude(preset::MatchLocalNames(vec![local_name!("p"), local_name!("a")]))
+        .exclude(preset::MatchLocalNames(vec![
+            local_name!("p"),
+            local_name!("a"),
+        ]))
         .exclude_attr(SimpleMatchAttribute::new(None, local_name!("role")))
         .exclude_attr(SimpleMatchAttribute::new(None, local_name!("href")))
         .build();
@@ -144,7 +150,7 @@ fn test_restrictive_policy_attrs() {
 #[test]
 fn test_restrictive_plugin_policy_remove() {
     let doc = Document::from(PARAGRAPH_CONTENTS);
-    let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
+    let policy: RestrictivePluginPolicy = PluginPolicy::builder()
         .remove(ExcludeNoHttps)
         .exclude(preset::AllowBasicHtml)
         .build();
@@ -161,9 +167,7 @@ fn test_restrictive_plugin_policy_remove() {
     assert!(doc.select("html").exists());
     assert!(doc.select("head").exists());
     assert!(doc.select("body").exists());
-
 }
-
 
 #[test]
 fn test_permissive_plugin_policy_remove() {
@@ -197,16 +201,13 @@ fn test_permissive_plugin_policy_remove() {
 fn test_permissive_plugin_policy_unspecified() {
     let contents = include_str!("../test-pages/table.html");
     let doc = Document::from(contents);
-    let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
-        .build();
+    let policy: PermissivePluginPolicy = PluginPolicy::builder().build();
 
     let total_nodes_before = doc.root().descendants_it().count();
     policy.sanitize_document(&doc);
     let total_nodes_after = doc.root().descendants_it().count();
     assert_eq!(total_nodes_before, total_nodes_after);
-
 }
-
 
 #[test]
 fn test_permissive_plugin_policy_exclude_attr() {
