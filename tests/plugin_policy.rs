@@ -52,7 +52,7 @@ impl NodeChecker for ExcludeP {
 struct SuspiciousAttr;
 impl AttrChecker for SuspiciousAttr {
     fn is_match_attr(&self, _node: &NodeRef, attr: &html5ever::Attribute) -> bool {
-        let attr_name = attr.name.local.as_ref();
+        let attr_name = attr.name.local.as_ref().to_ascii_lowercase();
         if attr_name != "onclick" && attr_name.starts_with("on") {
             return true;
         }
@@ -84,12 +84,13 @@ impl NodeChecker for RegexContentCountMatcher {
         if qual_name.local != self.element_scope {
             return false;
         }
-        let html = node.html();
-        if html.is_empty() {
+        
+        let text = node.text();
+        if text.is_empty() {
             return false;
         }
 
-        self.regex.find_iter(&html).count() >= self.threshold
+        self.regex.find_iter(&text).count() >= self.threshold
     }
 }
 
