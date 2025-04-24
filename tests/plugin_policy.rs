@@ -22,18 +22,15 @@ impl NodeChecker for ExcludeOnlyHttps {
 struct ExcludeNoHttps;
 impl NodeChecker for ExcludeNoHttps {
     fn is_match(&self, node: &NodeRef) -> bool {
-        if node.has_name("a") {
-            let Some(href) = node.attr("href") else {
-                return false;
-            };
-            return !href.starts_with("https://");
-        }
-        false
+        node.has_name("a")
+            && node
+                .attr("href")
+                .map_or(false, |href| !href.starts_with("https://"))
     }
 }
 
-struct AllowNonEmptyDiv;
-impl NodeChecker for AllowNonEmptyDiv {
+struct ExcludeNonEmptyDiv;
+impl NodeChecker for ExcludeNonEmptyDiv {
     fn is_match(&self, node: &NodeRef) -> bool {
         if node.has_name("div") {
             return !node.text().is_empty();
@@ -53,10 +50,7 @@ struct SuspiciousAttr;
 impl AttrChecker for SuspiciousAttr {
     fn is_match_attr(&self, _node: &NodeRef, attr: &html5ever::Attribute) -> bool {
         let attr_name = attr.name.local.as_ref().to_ascii_lowercase();
-        if attr_name != "onclick" && attr_name.starts_with("on") {
-            return true;
-        }
-        false
+        attr_name != "onclick" && attr_name.starts_with("on")
     }
 }
 
@@ -84,7 +78,7 @@ impl NodeChecker for RegexContentCountMatcher {
         if qual_name.local != self.element_scope {
             return false;
         }
-        
+
         let text = node.text();
         if text.is_empty() {
             return false;
@@ -97,9 +91,10 @@ impl NodeChecker for RegexContentCountMatcher {
 #[test]
 fn test_restrictive_plugin_policy() {
     let doc = Document::from(PARAGRAPH_CONTENTS);
+    // The policy is restrictive, so it will remove all elements that are not explicitly allowed (excluded from the policy).
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         .exclude(ExcludeOnlyHttps)
-        .exclude(AllowNonEmptyDiv)
+        .exclude(ExcludeNonEmptyDiv)
         .exclude(ExcludeP)
         .exclude(preset::AllowBasicHtml)
         .exclude(preset::MatchLocalName(local_name!("title")))
@@ -113,7 +108,7 @@ fn test_restrictive_plugin_policy() {
     // Divs are not empty, so they are allowed
     assert_eq!(doc.select("div").length(), 4);
 
-    // All links are stripped, because it's not clear if they are secure.
+    // All links are stripped, because it's not clear if they are secure. (Didn't match the policy)
     assert_eq!(doc.select("a").length(), 0);
     assert_eq!(doc.html().matches("link").count(), 3);
 
@@ -136,7 +131,10 @@ fn test_restrictive_policy_attrs() {
             local_name!("a"),
         ]))
         .exclude_attr(SimpleMatchAttribute::new(None, local_name!("role")))
-        .exclude_attr(SimpleMatchAttribute::new(Some(local_name!("a")), local_name!("href")))
+        .exclude_attr(SimpleMatchAttribute::new(
+            Some(local_name!("a")),
+            local_name!("href"),
+        ))
         .build();
     let doc = Document::from(PARAGRAPH_CONTENTS);
     policy.sanitize_document(&doc);
