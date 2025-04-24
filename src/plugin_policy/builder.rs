@@ -10,8 +10,7 @@ use crate::Restrictive;
 ///
 /// # Type Parameters
 ///
-/// - `T`: The sanitization directive, which must implement the [`SanitizePluginDirective`] trait.
-///  Defaults to [`Restrictive`].
+/// - `T`: The sanitization directive, which must implement the [`SanitizePluginDirective`] trait. Defaults to [`Restrictive`].
 ///
 /// # Example
 /// ```
