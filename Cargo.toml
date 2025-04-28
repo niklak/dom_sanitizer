@@ -8,8 +8,8 @@ repository = "https://github.com/niklak/dom_sanitizer"
 authors = ["niklak <morgenpurple@gmail.com>"]
 
 [dependencies]
-dom_query = {version = "0.17.0"}
-html5ever = {version = "0.30.0"}
+dom_query = {version = "0.18.0"}
+html5ever = {version = "0.31.0"}
 
 [dev-dependencies]
 regex = {version = "1.11.1"}
