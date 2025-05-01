@@ -6,6 +6,8 @@ license = "MIT"
 rust-version = "1.65"
 repository = "https://github.com/niklak/dom_sanitizer"
 authors = ["niklak <morgenpurple@gmail.com>"]
+exclude = [".*", "test-pages", "examples"]
+
 
 [dependencies]
 dom_query = {version = "0.18.0"}

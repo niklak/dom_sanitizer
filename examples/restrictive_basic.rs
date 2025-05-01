@@ -1,8 +1,7 @@
 use dom_sanitizer::RestrictivePolicy;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
-    // `RestrictivePolicy<'a>`, as well as `DenyAllPolicy`, is an alias for `Policy<'a, Restrictive>` 
+    // `RestrictivePolicy<'a>`, as well as `DenyAllPolicy`, is an alias for `Policy<'a, Restrictive>`
 
     // Create a new permissive policy with builder
     let policy = RestrictivePolicy::builder()
@@ -29,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 <div></div>
             </body>
         </html>"#;
-    
+
     let doc = dom_query::Document::from(contents);
     policy.sanitize_document(&doc);
 
@@ -47,6 +46,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert!(doc.select("head").exists());
     assert!(doc.select("body").exists());
     Ok(())
-
-    
 }

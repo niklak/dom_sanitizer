@@ -140,3 +140,254 @@ assert!(doc.select("head").exists());
 assert!(doc.select("body").exists());
 ```
 </details>
+
+---
+When the basic `Policy` capabilities are not enough, `PluginPolicy` allows
+you to define a fully customized sanitization policy.
+Like `Policy`, `PluginPolicy` can be either `Restrictive` or `Permissive`.
+
+To exclude elements from sanitization or remove them completely,
+implement the `NodeChecker` trait.
+To exclude attributes from sanitization, implement the `AttrChecker` trait.
+
+
+<details>
+<summary><b>A Basic Permissive Plugin Policy</b></summary>
+
+```rust
+use dom_sanitizer::plugin_policy::{AttrChecker, NodeChecker, PluginPolicy};
+use dom_sanitizer::Permissive;
+
+use dom_query::NodeRef;
+
+use html5ever::{local_name, LocalName};
+
+/// Matches nodes with a specific local name.
+pub struct MatchLocalName(pub LocalName);
+impl NodeChecker for MatchLocalName {
+    fn is_match(&self, node: &NodeRef) -> bool {
+        node.qual_name_ref()
+            .map_or(false, |qual_name| self.0 == qual_name.local)
+    }
+}
+
+/// Matches a suspicious attributes that starts with `on` but is not `onclick`.
+struct SuspiciousAttr;
+impl AttrChecker for SuspiciousAttr {
+    fn is_match_attr(&self, _node: &NodeRef, attr: &html5ever::Attribute) -> bool {
+        let attr_name = attr.name.local.as_ref().to_ascii_lowercase();
+        attr_name != "onclick" && attr_name.starts_with("on")
+    }
+}
+
+// Creates a permissive policy that allows all elements and attributes by default,
+// excluding those matched by custom checkers.
+let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
+    // `div` elements become disallowed and will be stripped from the DOM
+    .exclude(MatchLocalName(local_name!("div")))
+    // `style` elements will be completely removed from the DOM
+    .remove(MatchLocalName(local_name!("style")))
+    // Attributes that start with `on` and are not `onclick` will be removed
+    .exclude_attr(SuspiciousAttr)
+    .build();
+
+let contents: &str = r#"
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Test Ad Block</title></head>
+    <body>
+        <style>@keyframes x{}</style>
+        <div><p role="paragraph">The first paragraph contains <a href="/first" role="link">the first link</a>.</p></div>
+        <div><p role="paragraph">The second paragraph contains <a href="/second" role="link">the second link</a>.</p></div>
+        <div><p role="paragraph">The third paragraph contains <a href="/third" role="link">the third link</a>.</p></div>
+        <div><p id="highlight" role="paragraph"><mark>highlighted text</mark>, <b>bold text</b></p></div>
+        <div>
+            <a style="animation-name:x" onanimationend="alert(1)"></a>
+        </div>
+    </body>
+</html>"#;
+
+let doc = dom_query::Document::from(contents);
+
+policy.sanitize_document(&doc);
+
+// The `style` element is removed from the DOM
+assert!(!doc.select("style").exists());
+// All `div` elements are removed from the DOM
+assert!(!doc.select("div").exists());
+// All 4 `<p>` elements remain
+assert_eq!(doc.select("p").length(), 4);
+// Suspicious attributes removed (e.g., `onanimationend`)
+assert!(!doc.select("a[onanimationend]").exists());
+Ok(())
+```
+</details>
+
+<details>
+<summary><b>A Basic Restrictive Plugin Policy</b></summary>
+
+This example is using some predefined checkers from the `preset` module.
+
+```rust
+use dom_sanitizer::plugin_policy::{NodeChecker, PluginPolicy};
+use dom_sanitizer::plugin_policy::preset;
+use dom_sanitizer::Restrictive;
+use dom_query::NodeRef;
+
+use html5ever::local_name;
+
+struct ExcludeOnlyHttps;
+impl NodeChecker for ExcludeOnlyHttps {
+    fn is_match(&self, node: &NodeRef) -> bool {
+        node.has_name("a")
+            && node
+                .attr("href")
+                .map_or(false, |href| href.starts_with("https://"))
+    }
+}
+
+// Creates a restrictive policy that allows only specific elements and attributes
+// which are explicitly excluded from sanitization with custom checkers.
+let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
+    // Allow `a` elements only if their `href` starts with "https://"
+    .exclude(ExcludeOnlyHttps)
+    // Allow basic HTML structure elements: html, head, and body
+    .exclude(preset::AllowBasicHtml)
+    // Allow `title`, `p`, `mark`, and `b` elements
+    .exclude(preset::MatchLocalNames(vec![
+        local_name!("title"),
+        local_name!("p"),
+        local_name!("mark"),
+        local_name!("b"),
+    ]))
+    .build();
+
+let contents: &str = r#"
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Test Ad Block</title></head>
+    <body>
+        <div><p role="paragraph">The first paragraph contains <a href="/first" role="link">the first link</a>.</p></div>
+        <div><p role="paragraph">The second paragraph contains <a href="/second" role="link">the second link</a>.</p></div>
+        <div><p role="paragraph">The third paragraph contains <a href="/third" role="link">the third link</a>.</p></div>
+        <div><p id="highlight" role="paragraph"><mark>highlighted text</mark>, <b>bold text</b></p></div>
+    </body>
+</html>"#;
+
+let doc = dom_query::Document::from(contents);
+
+policy.sanitize_document(&doc);
+
+// After sanitization:
+// - there are no `div` elements in the DOM
+assert!(!doc.select("div").exists());
+
+// All links are stripped, because it's not clear if they are secure. (Didn't match the policy)
+assert_eq!(doc.select("a").length(), 0);
+// `link` appears only as text inside `p` elements
+assert_eq!(doc.html().matches("link").count(), 3);
+
+// html, head, body are always kept
+assert!(doc.select("html").exists());
+assert!(doc.select("head").exists());
+assert!(doc.select("body").exists());
+
+// title is preserved, because it's excluded from the Restrictive policy
+assert!(doc.select("head title").exists());
+assert!(doc.select("p mark").exists());
+assert!(doc.select("p b").exists());
+assert!(!doc.select("p[role]").exists());
+```
+</details>
+
+
+<details>
+<summary><b>Regex-Based Content Filter</b></summary>
+
+This example demonstrates how to implement a more advanced content filtering strategy
+using external dependencies like `regex`.
+
+```rust
+use dom_sanitizer::plugin_policy::{NodeChecker, PluginPolicy};
+use dom_sanitizer::Permissive;
+
+use dom_query::NodeRef;
+use html5ever::LocalName;
+use regex::Regex;
+
+// `RegexContentCountMatcher` checks whether a given regex pattern appears
+// in the text content of a node a certain number of times. If the number
+// of matches is greater than or equal to the specified threshold, the node
+// is considered a match.
+struct RegexContentCountMatcher {
+    element_scope: LocalName,
+    regex: Regex,
+    threshold: usize,
+}
+
+impl RegexContentCountMatcher {
+    fn new(re: &str, threshold: usize, element_scope: &str) -> Self {
+        Self {
+            element_scope: LocalName::from(element_scope),
+            regex: Regex::new(re).unwrap(),
+            threshold,
+        }
+    }
+}
+
+impl NodeChecker for RegexContentCountMatcher {
+    fn is_match(&self, node: &NodeRef) -> bool {
+        let Some(qual_name) = node.qual_name_ref() else {
+            return false;
+        };
+        if qual_name.local != self.element_scope {
+            return false;
+        }
+
+        let text = node.text();
+        if text.is_empty() {
+            return false;
+        }
+
+        self.regex.find_iter(&text).count() >= self.threshold
+    }
+}
+
+let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
+    .remove(RegexContentCountMatcher::new(
+        r"(?i)shop now|amazing deals|offer",
+        3,
+        "div",
+    ))
+    .build();
+
+let contents: &str = r#"
+<html lang="en">
+    <head><title>Test Ad Block</title></head>
+    <body>
+        <div class="ad-block">
+            <h3 class="ad-title">Limited Time Offer!</h3>
+            <p class="ad-text">Discover amazing deals on our latest products. Shop now and save big!</p>
+            <a href="/deal" target="_blank">Learn More</a>
+        </div>
+        <div><p class="regular-text">A test paragraph.</p></div>
+        <div><p>Another test paragraph.</p></div>
+    </body>
+</html>"#;
+
+let doc = dom_query::Document::from(contents);
+
+// Before sanitization:
+assert!(doc.select("div.ad-block").exists());
+assert_eq!(doc.select("div").length(), 3);
+assert_eq!(doc.select("p").length(), 3);
+
+policy.sanitize_document(&doc);
+
+// After sanitization, the `div.ad-block` element is removed because
+// its text content matched the pattern 3 times, which is considered too noisy.
+assert!(!doc.select("div.ad-block").exists());
+assert_eq!(doc.select("div").length(), 2);
+assert_eq!(doc.select("p").length(), 2);
+```
+</details>

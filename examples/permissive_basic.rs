@@ -1,7 +1,6 @@
 use dom_sanitizer::PermissivePolicy;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // Policy may be either `Restrictive` or `Permissive`.
     // The policy directive defines the sanitization behavior.
 
@@ -12,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // When you *exclude* elements from `Permissive` policy, it means that those elements will be removed from the DOM.
     // The same applies to attributes.
 
-    // `PermissivePolicy<'a>`, as well as `AllowAllPolicy`, is an alias for `Policy<'a, Permissive>` 
+    // `PermissivePolicy<'a>`, as well as `AllowAllPolicy`, is an alias for `Policy<'a, Permissive>`
 
     // Create a new permissive policy with builder
     let policy = PermissivePolicy::builder()
@@ -41,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 <div></div>
             </body>
         </html>"#;
-    
+
     let doc = dom_query::Document::from(contents);
 
     policy.sanitize_document(&doc);
@@ -59,6 +58,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(doc.select("a").length(), 3);
     assert_eq!(doc.select("a[href]").length(), 0);
     Ok(())
-
-    
 }
