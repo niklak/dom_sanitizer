@@ -22,8 +22,7 @@ impl AttrChecker for SuspiciousAttr {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {    
-
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Creates a permissive policy that allows all elements and attributes by default,
     // excluding those matched by custom checkers.
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()

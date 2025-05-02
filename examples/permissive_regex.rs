@@ -6,7 +6,6 @@ use dom_query::NodeRef;
 use html5ever::LocalName;
 use regex::Regex;
 
-
 // `RegexContentCountMatcher` checks whether a given regex pattern appears
 // in the text content of a node a certain number of times. If the number
 // of matches is greater than or equal to the specified threshold, the node
@@ -46,7 +45,6 @@ impl NodeChecker for RegexContentCountMatcher {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
         .remove(RegexContentCountMatcher::new(
             r"(?i)shop now|amazing deals|offer",
@@ -77,7 +75,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(doc.select("p").length(), 3);
 
     policy.sanitize_document(&doc);
-
     // After sanitization, the `div.ad-block` element is removed because
     // its text content matched the pattern 3 times, which is considered too noisy.
     assert!(!doc.select("div.ad-block").exists());

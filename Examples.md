@@ -1,17 +1,4 @@
-# dom_sanitizer
-
-[![codecov](https://codecov.io/github/niklak/dom_sanitizer/graph/badge.svg?token=Y3EN2HE4SR)](https://codecov.io/github/niklak/dom_sanitizer)
-
-[![Rust CI](https://github.com/niklak/dom_sanitizer/actions/workflows/rust.yml/badge.svg)](https://github.com/niklak/dom_sanitizer/actions/workflows/rust.yml)
-
-> Flexible HTML sanitization for Rust — build policies and sanitize documents easily.
-
-> Built on top of [dom_query](https://github.com/niklak/dom_query)
-
-
-
-
-## Examples
+# Examples
 
 A policy may have either a `Restrictive` or a `Permissive` directive.
 The policy directive defines the sanitization behavior.
@@ -427,13 +414,3 @@ assert_eq!(doc.select("div").length(), 2);
 assert_eq!(doc.select("p").length(), 2);
 ```
 </details>
-
-## License
-
-Licensed under MIT ([LICENSE](LICENSE) or http://opensource.org/licenses/MIT)
-
-
-## Contribution
-
-Any contribution intentionally submitted for inclusion in the work by you, shall be
-licensed with MIT license, without any additional terms or conditions.

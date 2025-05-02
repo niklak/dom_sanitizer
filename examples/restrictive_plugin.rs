@@ -1,7 +1,7 @@
-use dom_sanitizer::plugin_policy::{NodeChecker, PluginPolicy};
-use dom_sanitizer::plugin_policy::preset;
-use dom_sanitizer::Restrictive;
 use dom_query::NodeRef;
+use dom_sanitizer::plugin_policy::preset;
+use dom_sanitizer::plugin_policy::{NodeChecker, PluginPolicy};
+use dom_sanitizer::Restrictive;
 
 use html5ever::local_name;
 
@@ -16,7 +16,6 @@ impl NodeChecker for ExcludeOnlyHttps {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // This example is using some predefined checkers from the `preset` module.
 
     // Creates a restrictive policy that allows only specific elements and attributes
