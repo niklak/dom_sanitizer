@@ -430,7 +430,7 @@ assert_eq!(doc.select("p").length(), 2);
 
 ## License
 
-Licensed under MIT ([LICENSE](LICENSE) or http://opensource.org/licenses/MIT)
+Licensed under MIT ([LICENSE](LICENSE) or <http://opensource.org/licenses/MIT>)
 
 
 ## Contribution
