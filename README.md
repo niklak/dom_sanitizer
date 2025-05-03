@@ -179,7 +179,7 @@ let _policy = RestrictivePolicy::builder()
 
 
 <details>
-<summary><b>HTML Sanitizing</b></summary>
+<summary><b>HTML Sanitization</b></summary>
 
 ```rust
 use dom_sanitizer::PermissivePolicy;
