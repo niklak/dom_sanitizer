@@ -12,6 +12,7 @@ exclude = [".*", "test-pages", "examples"]
 [dependencies]
 dom_query = {version = "0.18.0"}
 html5ever = {version = "0.31.0"}
+tendril = {version = "0.4.3"}
 
 [dev-dependencies]
 regex = {version = "1.11.1"}

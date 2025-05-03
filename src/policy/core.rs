@@ -1,4 +1,5 @@
 use dom_query::{Document, NodeRef};
+use tendril::StrTendril;
 
 use super::builder::PolicyBuilder;
 use crate::{Permissive, Restrictive};
@@ -136,7 +137,7 @@ pub struct AttributeRule<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Policy<'a, T: SanitizeDirective = Restrictive> {
+pub struct Policy<'a, T =  Restrictive> {
     /// The list of excluding rules for attributes.
     /// For [Permissive] directive: attributes to remove
     /// For [Restrictive] directive: attributes to keep
@@ -170,9 +171,15 @@ impl<T: SanitizeDirective> Policy<'_, T> {
         T::sanitize_node(self, node);
         node.normalize();
     }
-    /// Sanitizes the attributes of a node by applying the policy rules according to the directive type.
+    /// Sanitizes the document.
     pub fn sanitize_document(&self, document: &Document) {
         self.sanitize_node(&document.root());
+    }
+    /// Sanitizes the HTML content by applying the policy rules according to the directive type.
+    pub fn sanitize_html<S: Into<StrTendril>>(&self, html: S) -> StrTendril {
+        let doc = Document::from(html);
+        self.sanitize_document(&doc);
+        doc.html()
     }
 }
 

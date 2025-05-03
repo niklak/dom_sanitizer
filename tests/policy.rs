@@ -137,3 +137,20 @@ fn test_restrictive_policy_remove() {
     assert!(!doc.select("style").exists());
     assert!(!doc.html().contains("border-collapse: collapse"));
 }
+
+
+#[test]
+fn test_restrictive_policy_remove_html() {
+    // Removing elements with `DenyAllPolicy` works the same way as with `AllowAllPolicy`.
+
+    let policy = AllowAllPolicy::builder().remove_elements(&["style"]).build();
+    let contents = include_str!("../test-pages/table.html");
+    assert!(contents.contains("border-collapse: collapse"));
+    assert!(contents.contains("<style>"));
+    let html = policy.sanitize_html(
+        contents,
+    );
+
+    assert!(!html.contains("<style>"));
+    assert!(!html.contains("border-collapse: collapse"));
+}

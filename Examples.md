@@ -17,7 +17,7 @@ Both policies may remove given elements and their descendants from the DOM. This
 <summary><b>A Basic PermissivePolicy</b></summary>
 
 ```rust
-use dom_sanitizer::{PermissivePolicy, RestrictivePolicy};
+use dom_sanitizer::PermissivePolicy;
 use dom_query::Document;
 
 // `PermissivePolicy<'a>`, as well as `AllowAllPolicy`, is an alias for `Policy<'a, Permissive>`
@@ -72,13 +72,13 @@ assert_eq!(doc.select("a[href]").length(), 0);
 <summary><b>A Basic RestrictivePolicy</b></summary>
 
 ```rust
-use dom_sanitizer::{PermissivePolicy, RestrictivePolicy};
+use dom_sanitizer::RestrictivePolicy;
 use dom_query::Document;
 
 
 // `RestrictivePolicy<'a>`, as well as `DenyAllPolicy`, is an alias for `Policy<'a, Restrictive>` 
 
-// Create a new permissive policy with builder
+// Create a new restrictive policy with builder
 let policy = RestrictivePolicy::builder()
     // allow only `p` and `a` elements
     .exclude_elements(&["p", "a"])
@@ -161,6 +161,45 @@ let _policy = RestrictivePolicy::builder()
     .exclude_element_attrs("a", &["href"])
     .remove_elements(&["style", "script"])
     .build();
+```
+</details>
+
+
+<details>
+<summary><b>HTML Sanitizing</b></summary>
+
+```rust
+use dom_sanitizer::PermissivePolicy;
+use dom_query::Document;
+
+
+// Create a new permissive policy with builder
+let policy = PermissivePolicy::builder()
+    // remove `style` elements including their descendants (elements, text, comments)
+    .remove_elements(&["style"])
+    .build();
+
+let contents: &str = r#"
+    <!DOCTYPE html>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <style>
+                p { border-bottom: 2px solid black; }
+            </style>
+            <div><p role="paragraph">The first paragraph contains <a href="/first" role="link">the first link</a>.</p></div>
+            <div></div>
+        </body>
+    </html>"#;
+
+assert!(contents.contains("<style>"));
+assert!(contents.contains(r#"p { border-bottom: 2px solid black; }"#));
+
+let html = policy.sanitize_html(contents);
+
+assert!(!html.contains("<style>"));
+assert!(!html.contains(r#"p { border-bottom: 2px solid black; }"#));
+
 ```
 </details>
 

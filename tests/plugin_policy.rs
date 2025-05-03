@@ -230,6 +230,10 @@ fn test_permissive_plugin_policy_exclude_attr() {
     assert!(!doc.select("style").exists());
     assert!(!doc.select("a[onanimationend]").exists());
     assert!(doc.select("a").exists());
+
+    assert!(contents.contains(r#"onanimationend="alert(1)""#));
+    let html = policy.sanitize_html(contents);
+    assert!(!html.contains(r#"onanimationend="alert(1)""#));
 }
 
 #[test]
