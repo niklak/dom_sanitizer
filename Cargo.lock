@@ -106,6 +106,7 @@ dependencies = [
  "dom_query",
  "html5ever",
  "regex",
+ "tendril",
 ]
 
 [[package]]

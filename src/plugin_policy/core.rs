@@ -1,5 +1,6 @@
 use dom_query::{Document, NodeRef};
 use html5ever::Attribute;
+use tendril::StrTendril;
 
 use super::builder::PluginPolicyBuilder;
 use crate::{Permissive, Restrictive};
@@ -194,9 +195,16 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
         node.normalize();
     }
 
-    /// Sanitizes the attributes of a node by applying the policy rules according to the directive type.
+    /// Sanitizes the document.
     pub fn sanitize_document(&self, document: &Document) {
         self.sanitize_node(&document.root());
+    }
+
+    /// Sanitizes the HTML content by applying the policy rules according to the directive type.
+    pub fn sanitize_html<S: Into<StrTendril>>(&self, html: S) -> StrTendril {
+        let doc = Document::from(html);
+        self.sanitize_document(&doc);
+        doc.html()
     }
 }
 
