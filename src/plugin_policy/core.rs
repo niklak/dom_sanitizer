@@ -113,8 +113,7 @@ impl SanitizePluginDirective for Restrictive {
                 child = next_node;
                 continue;
             }
-            // TODO: Call should_remove_restrictive
-            if policy.should_exclude(child_node) {
+            if Self::should_skip(child_node) || policy.should_exclude(child_node) {
                 Self::sanitize_node_attrs(policy, child_node);
                 child = next_node;
                 continue;

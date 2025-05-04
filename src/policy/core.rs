@@ -4,10 +4,6 @@ use tendril::StrTendril;
 use super::builder::PolicyBuilder;
 use crate::{Permissive, Restrictive};
 
-/// Elements that should never be removed during sanitization, as they are
-/// fundamental to the document structure.
-static ALWAYS_SKIP: &[&str] = &["html", "head", "body"];
-
 fn is_node_name_in(names: &[&str], node: &NodeRef) -> bool {
     let Some(qual_name) = node.qual_name_ref() else {
         return false;
@@ -97,7 +93,7 @@ impl SanitizeDirective for Restrictive {
                 child = next_node;
                 continue;
             }
-            if is_node_name_in(ALWAYS_SKIP, child_node)
+            if Self::should_skip(child_node)
                 || is_node_name_in(&policy.elements_to_exclude, child_node)
             {
                 Self::sanitize_node_attrs(policy, child_node);
@@ -137,7 +133,7 @@ pub struct AttributeRule<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Policy<'a, T: SanitizeDirective =  Restrictive> {
+pub struct Policy<'a, T: SanitizeDirective = Restrictive> {
     /// The list of excluding rules for attributes.
     /// For [Permissive] directive: attributes to remove
     /// For [Restrictive] directive: attributes to keep

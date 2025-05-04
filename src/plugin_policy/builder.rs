@@ -33,7 +33,6 @@ use crate::Restrictive;
 ///}
 ///
 ///let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
-///   .exclude(preset::AllowBasicHtml)
 ///   .exclude_attr(SuspiciousAttr)
 ///   .remove(preset::MatchLocalNames(vec![local_name!("script"), local_name!("style")]))
 ///   .build();
