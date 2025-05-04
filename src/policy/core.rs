@@ -33,7 +33,7 @@ impl SanitizeDirective for Permissive {
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
         if policy.elements_to_exclude.is_empty()
             && policy.elements_to_remove.is_empty()
-            && policy.attr_rules.is_empty()
+            && policy.attrs_to_exclude.is_empty()
         {
             return;
         }
@@ -66,7 +66,7 @@ impl SanitizeDirective for Permissive {
 
     /// Removes matching attributes from the element node.
     fn sanitize_node_attrs(policy: &Policy<Self>, node: &dom_query::NodeRef) {
-        if policy.attr_rules.is_empty() {
+        if policy.attrs_to_exclude.is_empty() {
             return;
         }
 
@@ -116,7 +116,7 @@ impl SanitizeDirective for Restrictive {
     /// Removes all attributes from the element node with exception of
     /// attributes listed in policy.
     fn sanitize_node_attrs(policy: &Policy<Self>, node: &dom_query::NodeRef) {
-        if policy.attr_rules.is_empty() {
+        if policy.attrs_to_exclude.is_empty() {
             node.remove_all_attrs();
             return;
         }
@@ -141,7 +141,7 @@ pub struct Policy<'a, T: SanitizeDirective =  Restrictive> {
     /// The list of excluding rules for attributes.
     /// For [Permissive] directive: attributes to remove
     /// For [Restrictive] directive: attributes to keep
-    pub attr_rules: Vec<AttributeRule<'a>>,
+    pub attrs_to_exclude: Vec<AttributeRule<'a>>,
     /// The list of element names excluded from the base [Policy].
     /// For [Permissive] directive: elements to remove (keeping their children)
     /// For [Restrictive] directive: elements to keep
@@ -154,7 +154,7 @@ pub struct Policy<'a, T: SanitizeDirective =  Restrictive> {
 impl<T: SanitizeDirective> Default for Policy<'_, T> {
     fn default() -> Self {
         Self {
-            attr_rules: Vec::new(),
+            attrs_to_exclude: Vec::new(),
             elements_to_exclude: Vec::new(),
             elements_to_remove: Vec::new(),
             _directive: std::marker::PhantomData,
@@ -190,7 +190,7 @@ impl<T: SanitizeDirective> Policy<'_, T> {
         };
         let mut attrs: Vec<&str> = vec![];
 
-        for rule in &self.attr_rules {
+        for rule in &self.attrs_to_exclude {
             let Some(element_name) = rule.element else {
                 attrs.extend(rule.attributes.iter());
                 continue;

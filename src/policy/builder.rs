@@ -35,7 +35,7 @@ use crate::Restrictive;
 /// ```
 pub struct PolicyBuilder<'a, T: SanitizeDirective = Restrictive> {
     /// A list of rules for excluding attributes.
-    attr_rules: Vec<AttributeRule<'a>>,
+    attrs_to_exclude: Vec<AttributeRule<'a>>,
     /// A list of element names to exclude from the base policy.
     elements_to_exclude: Vec<&'a str>,
     /// The list of element names to be fully removed from the DOM tree, including their children.
@@ -46,7 +46,7 @@ pub struct PolicyBuilder<'a, T: SanitizeDirective = Restrictive> {
 impl<T: SanitizeDirective> Default for PolicyBuilder<'_, T> {
     fn default() -> Self {
         Self {
-            attr_rules: vec![],
+            attrs_to_exclude: vec![],
             elements_to_exclude: vec![],
             elements_to_remove: vec![],
             _directive: std::marker::PhantomData,
@@ -84,7 +84,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
             element: None,
             attributes: attrs,
         };
-        self.attr_rules.push(rule);
+        self.attrs_to_exclude.push(rule);
         self
     }
 
@@ -97,13 +97,13 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
             element: Some(element),
             attributes: attrs,
         };
-        self.attr_rules.push(rule);
+        self.attrs_to_exclude.push(rule);
         self
     }
 
     /// Merges existing [`Policy`] into the builder, consuming it.
     pub fn merge(mut self, other: Policy<'a, T>) -> Self {
-        self.attr_rules.extend(other.attr_rules);
+        self.attrs_to_exclude.extend(other.attrs_to_exclude);
         self.elements_to_exclude.extend(other.elements_to_exclude);
         self.elements_to_remove.extend(other.elements_to_remove);
         self
@@ -112,7 +112,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     /// Builds the [`Policy`] using the current configuration.
     pub fn build(self) -> Policy<'a, T> {
         Policy {
-            attr_rules: self.attr_rules,
+            attrs_to_exclude: self.attrs_to_exclude,
             elements_to_exclude: self.elements_to_exclude,
             elements_to_remove: self.elements_to_remove,
             _directive: std::marker::PhantomData,
