@@ -1,20 +1,7 @@
 use dom_query::NodeRef;
-use html5ever::{local_name, Attribute, LocalName};
+use html5ever::{Attribute, LocalName};
 
 use super::{core::NodeChecker, AttrChecker};
-
-/// Matches basic HTML structure elements: html, head, and body.
-pub struct AllowBasicHtml;
-impl NodeChecker for AllowBasicHtml {
-    fn is_match(&self, node: &NodeRef) -> bool {
-        node.qual_name_ref().map_or(false, |qual_name| {
-            matches!(
-                qual_name.local,
-                local_name!("html") | local_name!("head") | local_name!("body")
-            )
-        })
-    }
-}
 
 /// Matches nodes with a specific local name.
 pub struct MatchLocalName(pub LocalName);

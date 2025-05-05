@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::core::{AttrChecker, NodeChecker, PluginPolicy, SanitizePluginDirective};
 
 use crate::Restrictive;
@@ -33,7 +35,6 @@ use crate::Restrictive;
 ///}
 ///
 ///let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
-///   .exclude(preset::AllowBasicHtml)
 ///   .exclude_attr(SuspiciousAttr)
 ///   .remove(preset::MatchLocalNames(vec![local_name!("script"), local_name!("style")]))
 ///   .build();
@@ -79,9 +80,9 @@ impl<T: SanitizePluginDirective> PluginPolicyBuilder<T> {
 
     pub fn build(self) -> PluginPolicy<T> {
         PluginPolicy {
-            exclude_checkers: self.exclude_checkers,
-            remove_checkers: self.remove_checkers,
-            attr_exclude_checkers: self.attr_exclude_checkers,
+            exclude_checkers: Arc::from(self.exclude_checkers),
+            remove_checkers: Arc::from(self.remove_checkers),
+            attr_exclude_checkers: Arc::from(self.attr_exclude_checkers),
             _directive: std::marker::PhantomData,
         }
     }

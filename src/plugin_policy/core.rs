@@ -1,3 +1,6 @@
+use std::fmt;
+use std::sync::Arc;
+
 use dom_query::{Document, NodeRef};
 use html5ever::Attribute;
 use tendril::StrTendril;
@@ -10,13 +13,13 @@ use crate::{Permissive, Restrictive};
 /// This trait is used to determine whether a node should be excluded from a basic policy rule
 /// or removed during the sanitization process. Implementors of this trait define the logic for
 /// matching nodes based on specific conditions.
-pub trait NodeChecker {
+pub trait NodeChecker: Send + Sync {
     /// Returns `true` if the node is excluded by the basic policy or needs to be removed; otherwise, returns `false`.
     fn is_match(&self, _node: &NodeRef) -> bool;
 }
 
 /// A trait for checking whether an attribute matches certain criteria.
-pub trait AttrChecker {
+pub trait AttrChecker: Send + Sync {
     /// For [Permissive] directive, returning `true` means the attribute should be removed.
     /// For [Restrictive] directive, returning `true` means the attribute should be kept.
     fn is_match_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool;
@@ -113,8 +116,7 @@ impl SanitizePluginDirective for Restrictive {
                 child = next_node;
                 continue;
             }
-            // TODO: Call should_remove_restrictive
-            if policy.should_exclude(child_node) {
+            if Self::should_skip(child_node) || policy.should_exclude(child_node) {
                 Self::sanitize_node_attrs(policy, child_node);
                 child = next_node;
                 continue;
@@ -139,16 +141,47 @@ impl SanitizePluginDirective for Restrictive {
     }
 }
 
+/// A plugin based policy for sanitizing HTML documents.
+#[derive(Clone)]
 pub struct PluginPolicy<T: SanitizePluginDirective = Restrictive> {
-    pub exclude_checkers: Vec<Box<dyn NodeChecker>>,
-    pub remove_checkers: Vec<Box<dyn NodeChecker>>,
-    pub attr_exclude_checkers: Vec<Box<dyn AttrChecker>>,
+    pub exclude_checkers: Arc<[Box<dyn NodeChecker>]>,
+    pub remove_checkers: Arc<[Box<dyn NodeChecker>]>,
+    pub attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]>,
     pub(crate) _directive: std::marker::PhantomData<T>,
+}
+
+impl<T: SanitizePluginDirective> fmt::Debug for PluginPolicy<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PluginPolicy")
+            .field(
+                "exclude_checkers",
+                &format_args!(
+                    "Arc<[Box<dyn NodeChecker>]> ({} elements)",
+                    self.exclude_checkers.len()
+                ),
+            )
+            .field(
+                "remove_checkers",
+                &format_args!(
+                    "Arc<[Box<dyn NodeChecker>]> ({} elements)",
+                    self.remove_checkers.len()
+                ),
+            )
+            .field(
+                "attr_exclude_checkers",
+                &format_args!(
+                    "Arc<[Box<dyn AttrChecker>]> ({} elements)",
+                    self.attr_exclude_checkers.len()
+                ),
+            )
+            .field("_directive", &self._directive)
+            .finish()
+    }
 }
 
 impl<T: SanitizePluginDirective> PluginPolicy<T> {
     fn should_exclude(&self, node: &NodeRef) -> bool {
-        for checker in &self.exclude_checkers {
+        for checker in self.exclude_checkers.iter() {
             if checker.is_match(node) {
                 return true;
             }
@@ -157,7 +190,7 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
     }
 
     fn should_remove(&self, node: &NodeRef) -> bool {
-        for checker in &self.remove_checkers {
+        for checker in self.remove_checkers.iter() {
             if checker.is_match(node) {
                 return true;
             }
@@ -165,7 +198,7 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
         false
     }
     fn should_exclude_attr(&self, node: &NodeRef, attr: &Attribute) -> bool {
-        for checker in &self.attr_exclude_checkers {
+        for checker in self.attr_exclude_checkers.iter() {
             if checker.is_match_attr(node, attr) {
                 return true;
             }

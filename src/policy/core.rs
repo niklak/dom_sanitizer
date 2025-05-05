@@ -1,18 +1,15 @@
 use dom_query::{Document, NodeRef};
+use html5ever::LocalName;
 use tendril::StrTendril;
 
 use super::builder::PolicyBuilder;
 use crate::{Permissive, Restrictive};
 
-/// Elements that should never be removed during sanitization, as they are
-/// fundamental to the document structure.
-static ALWAYS_SKIP: &[&str] = &["html", "head", "body"];
-
-fn is_node_name_in(names: &[&str], node: &NodeRef) -> bool {
+fn is_node_name_in(names: &[LocalName], node: &NodeRef) -> bool {
     let Some(qual_name) = node.qual_name_ref() else {
         return false;
     };
-    names.contains(&qual_name.local.as_ref())
+    names.contains(&qual_name.local)
 }
 
 /// A trait for sanitization directives, defines methods for node and attribute sanitization.
@@ -33,7 +30,7 @@ impl SanitizeDirective for Permissive {
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
         if policy.elements_to_exclude.is_empty()
             && policy.elements_to_remove.is_empty()
-            && policy.attr_rules.is_empty()
+            && policy.attrs_to_exclude.is_empty()
         {
             return;
         }
@@ -66,7 +63,7 @@ impl SanitizeDirective for Permissive {
 
     /// Removes matching attributes from the element node.
     fn sanitize_node_attrs(policy: &Policy<Self>, node: &dom_query::NodeRef) {
-        if policy.attr_rules.is_empty() {
+        if policy.attrs_to_exclude.is_empty() {
             return;
         }
 
@@ -97,7 +94,7 @@ impl SanitizeDirective for Restrictive {
                 child = next_node;
                 continue;
             }
-            if is_node_name_in(ALWAYS_SKIP, child_node)
+            if Self::should_skip(child_node)
                 || is_node_name_in(&policy.elements_to_exclude, child_node)
             {
                 Self::sanitize_node_attrs(policy, child_node);
@@ -116,7 +113,7 @@ impl SanitizeDirective for Restrictive {
     /// Removes all attributes from the element node with exception of
     /// attributes listed in policy.
     fn sanitize_node_attrs(policy: &Policy<Self>, node: &dom_query::NodeRef) {
-        if policy.attr_rules.is_empty() {
+        if policy.attrs_to_exclude.is_empty() {
             node.remove_all_attrs();
             return;
         }
@@ -131,30 +128,30 @@ impl SanitizeDirective for Restrictive {
 pub struct AttributeRule<'a> {
     /// The name of the element to which this rule applies.
     /// If `None`, the rule applies to all elements.
-    pub element: Option<&'a str>,
+    pub element: Option<LocalName>,
     /// The list of attribute keys to be excluded.
     pub attributes: &'a [&'a str],
 }
 
 #[derive(Debug, Clone)]
-pub struct Policy<'a, T: SanitizeDirective =  Restrictive> {
+pub struct Policy<'a, T: SanitizeDirective = Restrictive> {
     /// The list of excluding rules for attributes.
     /// For [Permissive] directive: attributes to remove
     /// For [Restrictive] directive: attributes to keep
-    pub attr_rules: Vec<AttributeRule<'a>>,
+    pub attrs_to_exclude: Vec<AttributeRule<'a>>,
     /// The list of element names excluded from the base [Policy].
     /// For [Permissive] directive: elements to remove (keeping their children)
     /// For [Restrictive] directive: elements to keep
-    pub elements_to_exclude: Vec<&'a str>,
+    pub elements_to_exclude: Vec<LocalName>,
     /// Specifies the names of elements to remove from the DOM with their children during sanitization.
-    pub elements_to_remove: Vec<&'a str>,
+    pub elements_to_remove: Vec<LocalName>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
 impl<T: SanitizeDirective> Default for Policy<'_, T> {
     fn default() -> Self {
         Self {
-            attr_rules: Vec::new(),
+            attrs_to_exclude: Vec::new(),
             elements_to_exclude: Vec::new(),
             elements_to_remove: Vec::new(),
             _directive: std::marker::PhantomData,
@@ -190,12 +187,12 @@ impl<T: SanitizeDirective> Policy<'_, T> {
         };
         let mut attrs: Vec<&str> = vec![];
 
-        for rule in &self.attr_rules {
-            let Some(element_name) = rule.element else {
+        for rule in &self.attrs_to_exclude {
+            let Some(element_name) = &rule.element else {
                 attrs.extend(rule.attributes.iter());
                 continue;
             };
-            if qual_name.local.as_ref() == element_name {
+            if &qual_name.local == element_name {
                 attrs.extend(rule.attributes.iter());
             }
         }

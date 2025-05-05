@@ -23,8 +23,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         // Allow `a` elements only if their `href` starts with "https://"
         .exclude(ExcludeOnlyHttps)
-        // Allow basic HTML structure elements: html, head, and body
-        .exclude(preset::AllowBasicHtml)
         // Allow `title`, `p`, `mark`, and `b` elements
         .exclude(preset::MatchLocalNames(vec![
             local_name!("title"),
@@ -32,6 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             local_name!("mark"),
             local_name!("b"),
         ]))
+        // `html`, `head`, and `body` are always kept
         .build();
 
     let contents: &str = r#"

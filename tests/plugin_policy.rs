@@ -96,7 +96,6 @@ fn test_restrictive_plugin_policy() {
         .exclude(ExcludeOnlyHttps)
         .exclude(ExcludeNonEmptyDiv)
         .exclude(ExcludeP)
-        .exclude(preset::AllowBasicHtml)
         .exclude(preset::MatchLocalName(local_name!("title")))
         .exclude(preset::MatchLocalNames(vec![
             local_name!("mark"),
@@ -146,10 +145,7 @@ fn test_restrictive_policy_attrs() {
 #[test]
 fn test_restrictive_plugin_policy_remove() {
     let doc = Document::from(PARAGRAPH_CONTENTS);
-    let policy: RestrictivePluginPolicy = PluginPolicy::builder()
-        .remove(ExcludeNoHttps)
-        .exclude(preset::AllowBasicHtml)
-        .build();
+    let policy: RestrictivePluginPolicy = PluginPolicy::builder().remove(ExcludeNoHttps).build();
 
     policy.sanitize_node(&doc.root());
     // Divs are not empty, so they are allowed
@@ -279,4 +275,22 @@ fn test_permissive_plugin_policy_remove_by_regex() {
     assert!(!doc.select("div.ad-block").exists());
     assert_eq!(doc.select("div").length(), 2);
     assert_eq!(doc.select("p").length(), 2);
+}
+
+
+#[test]
+fn test_plugin_policy_debug_fmt() {
+    let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
+        .exclude(crate::preset::MatchLocalName("div".into()))
+        .remove(crate::preset::MatchLocalName("style".into()))
+        .exclude_attr(crate::preset::SimpleMatchAttribute{element_scope: None, attribute_name: "role".into()})
+        .build();
+
+    let debug_output = format!("{:?}", policy);
+
+    assert!(debug_output.contains("PluginPolicy"));
+    assert!(debug_output.contains("exclude_checkers: Arc<[Box<dyn NodeChecker>]> (1 elements)"));
+    assert!(debug_output.contains("remove_checkers: Arc<[Box<dyn NodeChecker>]> (1 elements)"));
+    assert!(debug_output.contains("attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]> (1 elements)"));
+    assert!(debug_output.contains("_directive: PhantomData<dom_sanitizer::Restrictive>"));
 }
