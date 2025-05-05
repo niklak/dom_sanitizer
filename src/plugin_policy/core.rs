@@ -1,4 +1,5 @@
-use std::{fmt, rc::Rc};
+use std::fmt;
+use std::sync::Arc;
 
 use dom_query::{Document, NodeRef};
 use html5ever::Attribute;
@@ -12,13 +13,13 @@ use crate::{Permissive, Restrictive};
 /// This trait is used to determine whether a node should be excluded from a basic policy rule
 /// or removed during the sanitization process. Implementors of this trait define the logic for
 /// matching nodes based on specific conditions.
-pub trait NodeChecker {
+pub trait NodeChecker: Send + Sync {
     /// Returns `true` if the node is excluded by the basic policy or needs to be removed; otherwise, returns `false`.
     fn is_match(&self, _node: &NodeRef) -> bool;
 }
 
 /// A trait for checking whether an attribute matches certain criteria.
-pub trait AttrChecker {
+pub trait AttrChecker: Send + Sync {
     /// For [Permissive] directive, returning `true` means the attribute should be removed.
     /// For [Restrictive] directive, returning `true` means the attribute should be kept.
     fn is_match_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool;
@@ -143,9 +144,9 @@ impl SanitizePluginDirective for Restrictive {
 /// A plugin based policy for sanitizing HTML documents.
 #[derive(Clone)]
 pub struct PluginPolicy<T: SanitizePluginDirective = Restrictive> {
-    pub exclude_checkers: Rc<Vec<Box<dyn NodeChecker>>>,
-    pub remove_checkers: Rc<Vec<Box<dyn NodeChecker>>>,
-    pub attr_exclude_checkers: Rc<Vec<Box<dyn AttrChecker>>>,
+    pub exclude_checkers: Arc<Vec<Box<dyn NodeChecker>>>,
+    pub remove_checkers: Arc<Vec<Box<dyn NodeChecker>>>,
+    pub attr_exclude_checkers: Arc<Vec<Box<dyn AttrChecker>>>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
@@ -155,21 +156,21 @@ impl<T: SanitizePluginDirective> fmt::Debug for PluginPolicy<T> {
             .field(
                 "exclude_checkers",
                 &format_args!(
-                    "Rc<Vec<Box<dyn NodeChecker>>> ({} elements)",
+                    "Arc<Vec<Box<dyn NodeChecker>>> ({} elements)",
                     self.exclude_checkers.len()
                 ),
             )
             .field(
                 "remove_checkers",
                 &format_args!(
-                    "Rc<Vec<Box<dyn NodeChecker>>> ({} elements)",
+                    "Arc<Vec<Box<dyn NodeChecker>>> ({} elements)",
                     self.remove_checkers.len()
                 ),
             )
             .field(
                 "attr_exclude_checkers",
                 &format_args!(
-                    "Rc<Vec<Box<dyn AttrChecker>>> ({} elements)",
+                    "Arc<Vec<Box<dyn AttrChecker>>> ({} elements)",
                     self.attr_exclude_checkers.len()
                 ),
             )

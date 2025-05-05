@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use super::core::{AttrChecker, NodeChecker, PluginPolicy, SanitizePluginDirective};
 
@@ -80,9 +80,9 @@ impl<T: SanitizePluginDirective> PluginPolicyBuilder<T> {
 
     pub fn build(self) -> PluginPolicy<T> {
         PluginPolicy {
-            exclude_checkers: Rc::new(self.exclude_checkers),
-            remove_checkers: Rc::new(self.remove_checkers),
-            attr_exclude_checkers: Rc::new(self.attr_exclude_checkers),
+            exclude_checkers: Arc::new(self.exclude_checkers),
+            remove_checkers: Arc::new(self.remove_checkers),
+            attr_exclude_checkers: Arc::new(self.attr_exclude_checkers),
             _directive: std::marker::PhantomData,
         }
     }
