@@ -23,5 +23,5 @@ atomic = ["dom_query/atomic"]
 
 
 [[example]]
-name = "shared_plugin_policy_channels"
+name = "shared_plugin_policy"
 required-features = ["atomic"]
