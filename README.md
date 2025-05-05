@@ -234,15 +234,21 @@ let policy = DenyAllPolicy::builder()
     
 let shared_policy = Arc::new(policy);
 
+let mut handles = Vec::new();
 for _ in 0..4 {
     let policy = shared_policy.clone();
-    std::thread::spawn(move || {
+    let handle = std::thread::spawn(move || {
         let contents: &str = include_str!("../test-pages/table.html");
         let doc = dom_query::Document::from(contents);
         policy.sanitize_document(&doc);
-        assert!(doc.select("table > tr > td").exists());
+        assert!(doc.select("table tr > td").exists());
         assert!(!doc.select("style").exists());
     });
+    handles.push(handle);
+}
+
+for handle in handles {
+    handle.join().expect("worker thread panicked");
 }
 
 ```
@@ -521,6 +527,7 @@ let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
     // Allow table elements
     .exclude(preset::MatchLocalNames(vec![
         local_name!("table"),
+        local_name!("tbody"),
         local_name!("tr"),
         local_name!("th"),
         local_name!("td"),
@@ -550,9 +557,8 @@ drop(tx);
 
 for doc in rx {
     assert!(!doc.select("style").exists());
-    assert!(doc.select("table > tr > td").exists());
+    assert!(doc.select("table tr > td").exists());
 }
-
 ```
 </details>
 
