@@ -1,3 +1,5 @@
+use html5ever::LocalName;
+
 use super::core::{AttributeRule, Policy, SanitizeDirective};
 use crate::Restrictive;
 
@@ -37,9 +39,9 @@ pub struct PolicyBuilder<'a, T: SanitizeDirective = Restrictive> {
     /// A list of rules for excluding attributes.
     attrs_to_exclude: Vec<AttributeRule<'a>>,
     /// A list of element names to exclude from the base policy.
-    elements_to_exclude: Vec<&'a str>,
+    elements_to_exclude: Vec<LocalName>,
     /// The list of element names to be fully removed from the DOM tree, including their children.
-    elements_to_remove: Vec<&'a str>,
+    elements_to_remove: Vec<LocalName>,
     _directive: std::marker::PhantomData<T>,
 }
 
@@ -65,13 +67,13 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     /// - If the sanitization directive is [`crate::Permissive`], these elements will be removed from the DOM.
     /// - If the sanitization directive is [`crate::Restrictive`], only these elements will be kept; all others will be removed.
     pub fn exclude_elements(mut self, elements: &'a [&str]) -> Self {
-        self.elements_to_exclude.extend(elements);
+        self.elements_to_exclude.extend(intern_strings(elements));
         self
     }
 
     /// Specifies the names of elements to remove from the DOM with their children during sanitization.
     pub fn remove_elements(mut self, elements: &'a [&str]) -> Self {
-        self.elements_to_remove.extend(elements);
+        self.elements_to_remove.extend(intern_strings(elements));
         self
     }
 
@@ -94,7 +96,7 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     /// - If the sanitization directive is [`crate::Restrictive`], only these attributes will be kept for the specified element; all others will be removed.
     pub fn exclude_element_attrs(mut self, element: &'a str, attrs: &'a [&str]) -> Self {
         let rule = AttributeRule {
-            element: Some(element),
+            element: Some(element.into()),
             attributes: attrs,
         };
         self.attrs_to_exclude.push(rule);
@@ -118,4 +120,9 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
             _directive: std::marker::PhantomData,
         }
     }
+}
+
+
+fn intern_strings<'a>(elements: &'a [&str]) -> impl Iterator<Item = LocalName> + 'a {
+    elements.iter().map(|&name| LocalName::from(name))
 }

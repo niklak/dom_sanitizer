@@ -1,14 +1,15 @@
 use dom_query::{Document, NodeRef};
+use html5ever::LocalName;
 use tendril::StrTendril;
 
 use super::builder::PolicyBuilder;
 use crate::{Permissive, Restrictive};
 
-fn is_node_name_in(names: &[&str], node: &NodeRef) -> bool {
+fn is_node_name_in(names: &[LocalName], node: &NodeRef) -> bool {
     let Some(qual_name) = node.qual_name_ref() else {
         return false;
     };
-    names.contains(&qual_name.local.as_ref())
+    names.contains(&qual_name.local)
 }
 
 /// A trait for sanitization directives, defines methods for node and attribute sanitization.
@@ -127,7 +128,7 @@ impl SanitizeDirective for Restrictive {
 pub struct AttributeRule<'a> {
     /// The name of the element to which this rule applies.
     /// If `None`, the rule applies to all elements.
-    pub element: Option<&'a str>,
+    pub element: Option<LocalName>,
     /// The list of attribute keys to be excluded.
     pub attributes: &'a [&'a str],
 }
@@ -141,9 +142,9 @@ pub struct Policy<'a, T: SanitizeDirective = Restrictive> {
     /// The list of element names excluded from the base [Policy].
     /// For [Permissive] directive: elements to remove (keeping their children)
     /// For [Restrictive] directive: elements to keep
-    pub elements_to_exclude: Vec<&'a str>,
+    pub elements_to_exclude: Vec<LocalName>,
     /// Specifies the names of elements to remove from the DOM with their children during sanitization.
-    pub elements_to_remove: Vec<&'a str>,
+    pub elements_to_remove: Vec<LocalName>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
@@ -187,11 +188,11 @@ impl<T: SanitizeDirective> Policy<'_, T> {
         let mut attrs: Vec<&str> = vec![];
 
         for rule in &self.attrs_to_exclude {
-            let Some(element_name) = rule.element else {
+            let Some(element_name) = &rule.element else {
                 attrs.extend(rule.attributes.iter());
                 continue;
             };
-            if qual_name.local.as_ref() == element_name {
+            if &qual_name.local == element_name {
                 attrs.extend(rule.attributes.iter());
             }
         }
