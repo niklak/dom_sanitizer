@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use super::core::{AttrChecker, NodeChecker, PluginPolicy, SanitizePluginDirective};
 
 use crate::Restrictive;
@@ -78,9 +80,9 @@ impl<T: SanitizePluginDirective> PluginPolicyBuilder<T> {
 
     pub fn build(self) -> PluginPolicy<T> {
         PluginPolicy {
-            exclude_checkers: self.exclude_checkers,
-            remove_checkers: self.remove_checkers,
-            attr_exclude_checkers: self.attr_exclude_checkers,
+            exclude_checkers: Rc::new(self.exclude_checkers),
+            remove_checkers: Rc::new(self.remove_checkers),
+            attr_exclude_checkers: Rc::new(self.attr_exclude_checkers),
             _directive: std::marker::PhantomData,
         }
     }

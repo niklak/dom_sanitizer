@@ -122,7 +122,6 @@ impl<'a, T: SanitizeDirective> PolicyBuilder<'a, T> {
     }
 }
 
-
 fn intern_strings<'a>(elements: &'a [&str]) -> impl Iterator<Item = LocalName> + 'a {
     elements.iter().map(|&name| LocalName::from(name))
 }
