@@ -80,9 +80,9 @@ impl<T: SanitizePluginDirective> PluginPolicyBuilder<T> {
 
     pub fn build(self) -> PluginPolicy<T> {
         PluginPolicy {
-            exclude_checkers: Arc::new(self.exclude_checkers),
-            remove_checkers: Arc::new(self.remove_checkers),
-            attr_exclude_checkers: Arc::new(self.attr_exclude_checkers),
+            exclude_checkers: Arc::from(self.exclude_checkers),
+            remove_checkers: Arc::from(self.remove_checkers),
+            attr_exclude_checkers: Arc::from(self.attr_exclude_checkers),
             _directive: std::marker::PhantomData,
         }
     }

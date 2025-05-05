@@ -144,9 +144,9 @@ impl SanitizePluginDirective for Restrictive {
 /// A plugin based policy for sanitizing HTML documents.
 #[derive(Clone)]
 pub struct PluginPolicy<T: SanitizePluginDirective = Restrictive> {
-    pub exclude_checkers: Arc<Vec<Box<dyn NodeChecker>>>,
-    pub remove_checkers: Arc<Vec<Box<dyn NodeChecker>>>,
-    pub attr_exclude_checkers: Arc<Vec<Box<dyn AttrChecker>>>,
+    pub exclude_checkers:Arc<[Box<dyn NodeChecker>]>,
+    pub remove_checkers: Arc<[Box<dyn NodeChecker>]>,
+    pub attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
@@ -156,21 +156,21 @@ impl<T: SanitizePluginDirective> fmt::Debug for PluginPolicy<T> {
             .field(
                 "exclude_checkers",
                 &format_args!(
-                    "Arc<Vec<Box<dyn NodeChecker>>> ({} elements)",
+                    "Arc<[Box<dyn NodeChecker>]> ({} elements)",
                     self.exclude_checkers.len()
                 ),
             )
             .field(
                 "remove_checkers",
                 &format_args!(
-                    "Arc<Vec<Box<dyn NodeChecker>>> ({} elements)",
+                    "Arc<[Box<dyn NodeChecker>]> ({} elements)",
                     self.remove_checkers.len()
                 ),
             )
             .field(
                 "attr_exclude_checkers",
                 &format_args!(
-                    "Arc<Vec<Box<dyn AttrChecker>>> ({} elements)",
+                    "Arc<[Box<dyn AttrChecker>]> ({} elements)",
                     self.attr_exclude_checkers.len()
                 ),
             )
