@@ -16,3 +16,12 @@ tendril = {version = "0.4.3"}
 
 [dev-dependencies]
 regex = {version = "1.11.1"}
+
+[features]
+default = []
+atomic = ["dom_query/atomic"]
+
+
+[[example]]
+name = "shared_plugin_policy_channels"
+required-features = ["atomic"]

@@ -19,7 +19,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // `html`, `head`, and `body` are always kept
         .build();
         
-    dbg!(&policy);
     let shared_policy = Arc::new(policy);
 
     for _ in 0..4 {
