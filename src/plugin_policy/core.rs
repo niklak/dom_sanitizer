@@ -144,7 +144,7 @@ impl SanitizePluginDirective for Restrictive {
 /// A plugin based policy for sanitizing HTML documents.
 #[derive(Clone)]
 pub struct PluginPolicy<T: SanitizePluginDirective = Restrictive> {
-    pub exclude_checkers:Arc<[Box<dyn NodeChecker>]>,
+    pub exclude_checkers: Arc<[Box<dyn NodeChecker>]>,
     pub remove_checkers: Arc<[Box<dyn NodeChecker>]>,
     pub attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]>,
     pub(crate) _directive: std::marker::PhantomData<T>,

@@ -276,3 +276,21 @@ fn test_permissive_plugin_policy_remove_by_regex() {
     assert_eq!(doc.select("div").length(), 2);
     assert_eq!(doc.select("p").length(), 2);
 }
+
+
+#[test]
+fn test_plugin_policy_debug_fmt() {
+    let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
+        .exclude(crate::preset::MatchLocalName("div".into()))
+        .remove(crate::preset::MatchLocalName("style".into()))
+        .exclude_attr(crate::preset::SimpleMatchAttribute{element_scope: None, attribute_name: "role".into()})
+        .build();
+
+    let debug_output = format!("{:?}", policy);
+
+    assert!(debug_output.contains("PluginPolicy"));
+    assert!(debug_output.contains("exclude_checkers: Arc<[Box<dyn NodeChecker>]> (1 elements)"));
+    assert!(debug_output.contains("remove_checkers: Arc<[Box<dyn NodeChecker>]> (1 elements)"));
+    assert!(debug_output.contains("attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]> (1 elements)"));
+    assert!(debug_output.contains("_directive: PhantomData<dom_sanitizer::Restrictive>"));
+}
