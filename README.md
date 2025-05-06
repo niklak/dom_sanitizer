@@ -561,6 +561,11 @@ It utilizes the `atomic` feature, which is required to share `dom_query::Documen
 </details>
 
 
+## Crate Features
+
+- `atomic` — enables thread-safe usage of `dom_query::Document` by activating the `atomic` feature of the `dom_query` dependency.
+Required only if the `Document` needs to be shared or transferred across threads (i.e., `Send` + `Sync` bounds).
+
 ## License
 
 Licensed under MIT ([LICENSE](LICENSE) or <http://opensource.org/licenses/MIT>)
