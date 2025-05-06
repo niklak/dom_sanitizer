@@ -367,7 +367,7 @@ let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
     .exclude(ExcludeOnlyHttps)
     // Allow `title`, `p`, `mark`, and `b` elements
     .exclude(preset::LocalNamesMatcher::new(&[
-        "title", "p", "mark","b",
+        "title", "p", "mark", "b",
     ]))
     // `html`, `head`, and `body` are always kept
     .build();
@@ -508,7 +508,7 @@ assert_eq!(doc.select("p").length(), 2);
 
 *This example requires the `atomic` feature.*
 
-This example demonstrates how to safely share and use a `PluginPolicy` across multiple threads. 
+It demonstrates how to safely share and use a `PluginPolicy` across multiple threads. 
 It utilizes the `atomic` feature, which is required to share `dom_query::Document`.
 
 ```rust
@@ -533,7 +533,6 @@ It utilizes the `atomic` feature, which is required to share `dom_query::Documen
         // `html`, `head`, and `body` are always kept
         .build();
         
-    dbg!(&policy);
     let shared_policy = Arc::new(policy);
 
     let (tx, rx) = channel();
