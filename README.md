@@ -506,7 +506,7 @@ assert_eq!(doc.select("p").length(), 2);
 <details>
 <summary><b>Sharing A `PluginPolicy` across Threads (atomic)</b></summary>
 
-*This example requires `atomic` feature.*
+*This example requires the `atomic` feature.*
 
 This example demonstrates how to safely share and use a `PluginPolicy` across multiple threads. 
 It utilizes the `atomic` feature, which is required to share `dom_query::Document`.

@@ -68,7 +68,7 @@ impl AttrChecker for AttrMatcher {
 }
 
 impl AttrMatcher {
-    /// Creates a new `SimpleMatchAttribute` instance.
+    /// Creates a new `AttrMatcher` instance.
     ///
     /// # Arguments
     ///
