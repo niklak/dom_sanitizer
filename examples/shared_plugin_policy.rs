@@ -1,8 +1,6 @@
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 
-use html5ever::local_name;
-
 use dom_sanitizer::plugin_policy::preset;
 use dom_sanitizer::plugin_policy::PluginPolicy;
 use dom_sanitizer::Restrictive;
@@ -10,14 +8,10 @@ use dom_sanitizer::Restrictive;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         // Allow table elements
-        .exclude(preset::MatchLocalNames(vec![
-            local_name!("table"),
-            local_name!("tbody"),
-            local_name!("tr"),
-            local_name!("th"),
-            local_name!("td"),
+        .exclude(preset::LocalNamesMatcher::new(&[
+            "table", "tbody", "tr", "th", "td",
         ]))
-        .remove(preset::MatchLocalName(local_name!("style")))
+        .remove(preset::LocalNameMatcher::new("style"))
         // `html`, `head`, and `body` are always kept
         .build();
 

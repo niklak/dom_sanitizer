@@ -1,9 +1,9 @@
 use dom_query::{Document, NodeRef};
 use dom_sanitizer::plugin_policy::core::{PermissivePluginPolicy, RestrictivePluginPolicy};
-use dom_sanitizer::plugin_policy::preset::SimpleMatchAttribute;
+use dom_sanitizer::plugin_policy::preset::AttrMatcher;
 use dom_sanitizer::plugin_policy::{preset, AttrChecker, NodeChecker, PluginPolicy};
 use dom_sanitizer::{Permissive, Restrictive};
-use html5ever::{local_name, LocalName};
+use html5ever::LocalName;
 
 mod data;
 use data::PARAGRAPH_CONTENTS;
@@ -96,11 +96,8 @@ fn test_restrictive_plugin_policy() {
         .exclude(ExcludeOnlyHttps)
         .exclude(ExcludeNonEmptyDiv)
         .exclude(ExcludeP)
-        .exclude(preset::MatchLocalName(local_name!("title")))
-        .exclude(preset::MatchLocalNames(vec![
-            local_name!("mark"),
-            local_name!("b"),
-        ]))
+        .exclude(preset::LocalNameMatcher::new("title"))
+        .exclude(preset::LocalNamesMatcher::new(&["mark", "b"]))
         .build();
 
     policy.sanitize_node(&doc.root());
@@ -125,15 +122,9 @@ fn test_restrictive_plugin_policy() {
 #[test]
 fn test_restrictive_policy_attrs() {
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
-        .exclude(preset::MatchLocalNames(vec![
-            local_name!("p"),
-            local_name!("a"),
-        ]))
-        .exclude_attr(SimpleMatchAttribute::new(None, local_name!("role")))
-        .exclude_attr(SimpleMatchAttribute::new(
-            Some(local_name!("a")),
-            local_name!("href"),
-        ))
+        .exclude(preset::LocalNamesMatcher::new(&["p", "a"]))
+        .exclude_attr(AttrMatcher::new(None, &["role"]))
+        .exclude_attr(AttrMatcher::new(Some("a"), &["href"]))
         .build();
     let doc = Document::from(PARAGRAPH_CONTENTS);
     policy.sanitize_document(&doc);
@@ -166,7 +157,7 @@ fn test_permissive_plugin_policy_remove() {
     let contents = include_str!("../test-pages/table.html");
     let doc = Document::from(contents);
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
-        .exclude(preset::MatchLocalNames(vec![local_name!("style")]))
+        .exclude(preset::LocalNamesMatcher::new(&["style"]))
         .build();
 
     assert!(doc.select("style").exists());
@@ -180,7 +171,7 @@ fn test_permissive_plugin_policy_remove() {
 
     // For such cases it's better to use the `remove_elements()` method.
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
-        .remove(preset::MatchLocalNames(vec![local_name!("style")]))
+        .remove(preset::LocalNamesMatcher::new(&["style"]))
         .build();
     let doc = Document::from(contents);
     policy.sanitize_document(&doc);
@@ -217,7 +208,7 @@ fn test_permissive_plugin_policy_exclude_attr() {
     let doc = Document::from(contents);
     let policy: PluginPolicy<Permissive> = PluginPolicy::builder()
         .exclude_attr(SuspiciousAttr)
-        .remove(preset::MatchLocalNames(vec![local_name!("style")]))
+        .remove(preset::LocalNamesMatcher::new(&["style"]))
         .build();
 
     assert!(doc.select("style").exists());
@@ -277,13 +268,12 @@ fn test_permissive_plugin_policy_remove_by_regex() {
     assert_eq!(doc.select("p").length(), 2);
 }
 
-
 #[test]
 fn test_plugin_policy_debug_fmt() {
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
-        .exclude(crate::preset::MatchLocalName("div".into()))
-        .remove(crate::preset::MatchLocalName("style".into()))
-        .exclude_attr(crate::preset::SimpleMatchAttribute{element_scope: None, attribute_name: "role".into()})
+        .exclude(crate::preset::LocalNameMatcher::new("div"))
+        .remove(crate::preset::LocalNameMatcher::new("style"))
+        .exclude_attr(crate::preset::AttrMatcher::new(None, &["role"]))
         .build();
 
     let debug_output = format!("{:?}", policy);
@@ -291,6 +281,8 @@ fn test_plugin_policy_debug_fmt() {
     assert!(debug_output.contains("PluginPolicy"));
     assert!(debug_output.contains("exclude_checkers: Arc<[Box<dyn NodeChecker>]> (1 elements)"));
     assert!(debug_output.contains("remove_checkers: Arc<[Box<dyn NodeChecker>]> (1 elements)"));
-    assert!(debug_output.contains("attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]> (1 elements)"));
+    assert!(
+        debug_output.contains("attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]> (1 elements)")
+    );
     assert!(debug_output.contains("_directive: PhantomData<dom_sanitizer::Restrictive>"));
 }
