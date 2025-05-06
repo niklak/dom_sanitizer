@@ -3,8 +3,6 @@ use dom_sanitizer::plugin_policy::preset;
 use dom_sanitizer::plugin_policy::{NodeChecker, PluginPolicy};
 use dom_sanitizer::Restrictive;
 
-use html5ever::local_name;
-
 struct ExcludeOnlyHttps;
 impl NodeChecker for ExcludeOnlyHttps {
     fn is_match(&self, node: &NodeRef) -> bool {
@@ -24,12 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Allow `a` elements only if their `href` starts with "https://"
         .exclude(ExcludeOnlyHttps)
         // Allow `title`, `p`, `mark`, and `b` elements
-        .exclude(preset::MatchLocalNames(vec![
-            local_name!("title"),
-            local_name!("p"),
-            local_name!("mark"),
-            local_name!("b"),
-        ]))
+        .exclude(preset::LocalNamesMatcher::new(&["title", "p", "mark", "b"]))
         // `html`, `head`, and `body` are always kept
         .build();
 

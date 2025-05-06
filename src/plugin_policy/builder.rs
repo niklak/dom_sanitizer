@@ -36,7 +36,7 @@ use crate::Restrictive;
 ///
 ///let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
 ///   .exclude_attr(SuspiciousAttr)
-///   .remove(preset::MatchLocalNames(vec![local_name!("script"), local_name!("style")]))
+///   .remove(preset::LocalNamesMatcher::new(&["style", "script"]))
 ///   .build();
 /// ```
 pub struct PluginPolicyBuilder<T: SanitizePluginDirective = Restrictive> {

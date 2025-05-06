@@ -353,11 +353,8 @@ let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
     // Allow `a` elements only if their `href` starts with "https://"
     .exclude(ExcludeOnlyHttps)
     // Allow `title`, `p`, `mark`, and `b` elements
-    .exclude(preset::MatchLocalNames(vec![
-        local_name!("title"),
-        local_name!("p"),
-        local_name!("mark"),
-        local_name!("b"),
+    .exclude(preset::LocalNamesMatcher::new(&[
+        "title", "p", "mark", "b",
     ]))
     // `html`, `head`, and `body` are always kept
     .build();
@@ -495,9 +492,10 @@ assert_eq!(doc.select("p").length(), 2);
 
 <details>
 <summary><b>Sharing A `PluginPolicy` across Threads (atomic)</b></summary>
-*This example requires `atomic` feature.*
 
-This example demonstrates how to safely share and use a `PluginPolicy` across multiple threads. 
+*This example requires the `atomic` feature.*
+
+It demonstrates how to safely share and use a `PluginPolicy` across multiple threads. 
 It utilizes the `atomic` feature, which is required to share `dom_query::Document`.
 
 ```rust
@@ -515,18 +513,13 @@ It utilizes the `atomic` feature, which is required to share `dom_query::Documen
 
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         // Allow table elements
-        .exclude(preset::MatchLocalNames(vec![
-            local_name!("table"),
-            local_name!("tbody"),
-            local_name!("tr"),
-            local_name!("th"),
-            local_name!("td"),
+        .exclude(preset::LocalNamesMatcher::new(&[
+            "table", "tbody", "tr", "th", "td",
         ]))
-        .remove(preset::MatchLocalName(local_name!("style")))
+        .remove(preset::LocalNameMatcher::new("style"))
         // `html`, `head`, and `body` are always kept
         .build();
         
-    dbg!(&policy);
     let shared_policy = Arc::new(policy);
 
     let (tx, rx) = channel();
