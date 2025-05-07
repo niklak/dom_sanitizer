@@ -39,7 +39,7 @@ impl SanitizeDirective for Permissive {
 
         while let Some(ref child_node) = child {
             let next_node = child_node.next_sibling();
-            if is_node_name_in(&policy.elements_to_remove, child_node) {
+            if policy.should_remove(child_node) {
                 child_node.remove_from_parent();
                 child = next_node;
                 continue;
@@ -48,7 +48,7 @@ impl SanitizeDirective for Permissive {
                 Self::sanitize_node(policy, child_node);
             }
 
-            if is_node_name_in(&policy.elements_to_exclude, child_node) {
+            if policy.should_exclude(child_node) {
                 if let Some(first_inline) = child_node.first_child() {
                     child_node.insert_siblings_before(&first_inline);
                 };
@@ -78,35 +78,26 @@ impl SanitizeDirective for Restrictive {
     /// Removes attributes from the element node with exception of
     /// attributes listed in policy.
     fn sanitize_node(policy: &Policy<Self>, node: &NodeRef) {
-        let mut child = node.first_child();
+        let mut next_node = next_child_or_sibling(node, false);
+        while let Some(child) = next_node {
 
-        while let Some(ref child_node) = child {
-            let next_node = child_node.next_sibling();
-            if is_node_name_in(&policy.elements_to_remove, child_node) {
-                child_node.remove_from_parent();
-                child = next_node;
-                continue;
-            }
-            if child_node.may_have_children() {
-                Self::sanitize_node(policy, child_node);
-            }
-            if !child_node.is_element() {
-                child = next_node;
-                continue;
-            }
-            if Self::should_skip(child_node)
-                || is_node_name_in(&policy.elements_to_exclude, child_node)
-            {
-                Self::sanitize_node_attrs(policy, child_node);
-                child = next_node;
+            if policy.should_remove(&child) {
+                next_node = next_child_or_sibling(&child, true);
+                child.remove_from_parent();
                 continue;
             }
 
-            if let Some(first_inline) = child_node.first_child() {
-                child_node.insert_siblings_before(&first_inline);
+            if Self::should_skip(&child) || policy.should_exclude(&child) {
+                Self::sanitize_node_attrs(policy, &child);
+                next_node = next_child_or_sibling(&child, false);
+                continue;
+            }
+
+            next_node = next_child_or_sibling(&child, false);
+            if let Some(first_inline) = child.first_child() {
+                child.insert_siblings_before(&first_inline);
             };
-            child_node.remove_from_parent();
-            child = next_node;
+            child.remove_from_parent();
         }
     }
 
@@ -200,6 +191,16 @@ impl<T: SanitizeDirective> Policy<'_, T> {
     }
 }
 
+impl<T: SanitizeDirective> Policy<'_, T> {
+    fn should_exclude(&self, node: &NodeRef) -> bool {
+        is_node_name_in(&self.elements_to_exclude, &node) 
+    }
+
+    fn should_remove(&self, node: &NodeRef) -> bool {
+        is_node_name_in(&self.elements_to_remove, &node) 
+    }
+}
+
 impl<'a, T: SanitizeDirective> Policy<'a, T> {
     /// Creates a new [`PolicyBuilder`] with default values.
     pub fn builder() -> PolicyBuilder<'a, T> {
@@ -221,3 +222,24 @@ pub type AllowAllPolicy<'a> = Policy<'a, Permissive>;
 pub type RestrictivePolicy<'a> = Policy<'a, Restrictive>;
 /// Alias for [`RestrictivePolicy`] — denies all elements and attributes by default.
 pub type DenyAllPolicy<'a> = Policy<'a, Restrictive>;
+
+fn next_child_or_sibling<'a>(node: &NodeRef<'a>, ignore_child: bool) -> Option<NodeRef<'a>> {
+    if !ignore_child {
+        if let Some(first_child) = node.first_element_child() {
+            return Some(first_child);
+        }
+    }
+
+    if let Some(sibling) = node.next_element_sibling() {
+        return Some(sibling);
+    } 
+    let mut parent = node.parent();
+    while let Some(parent_node) = parent {
+        if let Some(next_sibling) = parent_node.next_element_sibling() {
+            return Some(next_sibling);
+        } else {
+            parent = parent_node.parent()
+        }
+    }
+    None
+}
