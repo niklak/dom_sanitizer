@@ -47,7 +47,7 @@
 ///     .build();
 /// ```
 use super::core::Policy;
-use super::core::SanitizeDirective;
+use crate::traits::SanitizeDirective;
 
 /// Excludes all table-related elements, such as `table`, `caption`, `colgroup`, `col`, `th`,
 /// `tbody`, `tr`, `td`, and `tfoot`, from the base sanitization policy.

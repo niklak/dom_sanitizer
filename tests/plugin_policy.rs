@@ -284,5 +284,7 @@ fn test_plugin_policy_debug_fmt() {
     assert!(
         debug_output.contains("attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]> (1 elements)")
     );
-    assert!(debug_output.contains("_directive: PhantomData<dom_sanitizer::Restrictive>"));
+    assert!(
+        debug_output.contains("_directive: PhantomData<dom_sanitizer::directives::Restrictive>")
+    );
 }
