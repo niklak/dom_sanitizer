@@ -63,7 +63,6 @@ impl Restrictive {
     }
 }
 
-
 impl SanitizeDirective for Restrictive {
     /// Removes elements from the DOM keeping their children with exception of
     /// elements listed in policy.

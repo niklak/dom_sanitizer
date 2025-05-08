@@ -6,8 +6,8 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use super::builder::PluginPolicyBuilder;
-use crate::{Permissive, Restrictive};
 use crate::traits::{SanitizeDirective, SanitizePolicy};
+use crate::{Permissive, Restrictive};
 
 /// A trait for checking whether a node matches certain criteria.
 ///
@@ -25,8 +25,6 @@ pub trait AttrChecker: Send + Sync {
     /// For [Restrictive] directive, returning `true` means the attribute should be kept.
     fn is_match_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool;
 }
-
-
 
 /// A plugin based policy for sanitizing HTML documents.
 #[derive(Clone)]
@@ -66,23 +64,17 @@ impl<T: SanitizeDirective> fmt::Debug for PluginPolicy<T> {
     }
 }
 
-impl <T: SanitizeDirective> SanitizePolicy for PluginPolicy<T> {
+impl<T: SanitizeDirective> SanitizePolicy for PluginPolicy<T> {
     fn should_exclude(&self, node: &NodeRef) -> bool {
-        for checker in self.exclude_checkers.iter() {
-            if checker.is_match(node) {
-                return true;
-            }
-        }
-        false
+        self.exclude_checkers
+            .iter()
+            .any(|checker| checker.is_match(node))
     }
 
     fn should_remove(&self, node: &NodeRef) -> bool {
-        for checker in self.remove_checkers.iter() {
-            if checker.is_match(node) {
-                return true;
-            }
-        }
-        false
+        self.remove_checkers
+            .iter()
+            .any(|checker| checker.is_match(node))
     }
 
     fn has_attrs_to_exclude(&self) -> bool {
@@ -110,8 +102,6 @@ impl <T: SanitizeDirective> SanitizePolicy for PluginPolicy<T> {
 }
 
 impl<T: SanitizeDirective> PluginPolicy<T> {
-    
-    
     fn should_exclude_attr(&self, node: &NodeRef, attr: &Attribute) -> bool {
         for checker in self.attr_exclude_checkers.iter() {
             if checker.is_match_attr(node, attr) {

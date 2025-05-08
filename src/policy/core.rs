@@ -135,4 +135,3 @@ pub type AllowAllPolicy<'a> = Policy<'a, Permissive>;
 pub type RestrictivePolicy<'a> = Policy<'a, Restrictive>;
 /// Alias for [`RestrictivePolicy`] — denies all elements and attributes by default.
 pub type DenyAllPolicy<'a> = Policy<'a, Restrictive>;
-

@@ -2,13 +2,10 @@
 
 #![doc = include_str!("../Examples.md")]
 
+pub mod directives;
 pub mod plugin_policy;
 pub mod policy;
 pub mod traits;
-pub mod directives;
 
-pub use policy::*;
 pub use directives::{Permissive, Restrictive};
-
-
-
+pub use policy::*;

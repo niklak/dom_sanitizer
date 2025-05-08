@@ -25,7 +25,5 @@ pub trait SanitizePolicy {
     where
         F: FnOnce(&NodeRef, &[&str]);
     /// A policy instance doesn't have any special exclusions.
-    fn is_empty(&self) -> bool {
-        false
-    }
+    fn is_empty(&self) -> bool;
 }
