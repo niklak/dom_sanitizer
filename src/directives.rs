@@ -17,7 +17,6 @@ impl SanitizeDirective for Permissive {
             return;
         }
         let mut next_node = next_child_or_sibling(node, false);
-
         while let Some(child) = next_node {
             if policy.should_remove(&child) {
                 next_node = next_child_or_sibling(&child, true);
@@ -26,14 +25,15 @@ impl SanitizeDirective for Permissive {
             }
 
             next_node = next_child_or_sibling(&child, false);
-            if policy.should_exclude(&child) {
-                if let Some(first_inline) = child.first_child() {
-                    child.insert_siblings_before(&first_inline);
-                };
-                child.remove_from_parent();
-            } else {
+
+            if !policy.should_exclude(&child) {
                 Self::sanitize_node_attrs(policy, &child);
+                continue;
             }
+            if let Some(first_inline) = child.first_child() {
+                child.insert_siblings_before(&first_inline);
+            };
+            child.remove_from_parent();
         }
     }
 
