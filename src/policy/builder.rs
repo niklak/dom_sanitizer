@@ -1,6 +1,7 @@
 use html5ever::LocalName;
 
-use super::core::{AttributeRule, Policy, SanitizeDirective};
+use super::core::{AttributeRule, Policy};
+use crate::traits::SanitizeDirective;
 use crate::Restrictive;
 
 /// A builder for constructing a [`Policy`] with customizable sanitization rules.

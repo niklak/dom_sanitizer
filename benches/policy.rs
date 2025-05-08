@@ -4,10 +4,9 @@ use std::hint::black_box;
 use dom_query::Document;
 use dom_sanitizer::RestrictivePolicy;
 
-
 fn sanitize_deny_all(contents: &str, policy: &RestrictivePolicy) {
     let doc = Document::from(contents);
-    
+
     policy.sanitize_document(&doc);
 }
 
