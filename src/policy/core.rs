@@ -7,10 +7,8 @@ use crate::traits::{SanitizeDirective, SanitizePolicy};
 use crate::{Permissive, Restrictive};
 
 fn is_node_name_in(names: &[LocalName], node: &NodeRef) -> bool {
-    let Some(qual_name) = node.qual_name_ref() else {
-        return false;
-    };
-    names.contains(&qual_name.local)
+    node.qual_name_ref()
+        .map_or(false, |qual_name| names.contains(&qual_name.local))
 }
 
 /// An **excluding** rule for sanitizing attributes of a specific element.
