@@ -98,11 +98,11 @@ impl<T: SanitizeDirective> SanitizePolicy for Policy<'_, T> {
             if let Some(qual_name) = node.qual_name_ref() {
                 for rule in &self.attrs_to_exclude {
                     let Some(element_name) = &rule.element else {
-                        attrs.extend(rule.attributes.iter());
+                        attrs.extend(rule.attributes);
                         continue;
                     };
                     if &qual_name.local == element_name {
-                        attrs.extend(rule.attributes.iter());
+                        attrs.extend(rule.attributes);
                     }
                 }
             }
