@@ -20,10 +20,11 @@ pub trait SanitizePolicy {
     fn should_remove(&self, node: &NodeRef) -> bool;
     /// Whether the policy has attributes to be excluded.
     fn has_attrs_to_exclude(&self) -> bool;
+    /// Excludes the attributes of a node based on the policy.
     fn exclude_attrs<F>(&self, node: &NodeRef, exclude_fn: F)
     where
         F: FnOnce(&NodeRef, &[&str]);
-    /// Policy doesn't have any special exclusions.
+    /// A policy instance doesn't have any special exclusions.
     fn is_empty(&self) -> bool {
         false
     }

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use super::core::{AttrChecker, NodeChecker, PluginPolicy, SanitizePluginDirective};
+use super::core::{AttrChecker, NodeChecker, PluginPolicy};
+use crate::traits::SanitizeDirective;
 
 use crate::Restrictive;
 
@@ -12,7 +13,7 @@ use crate::Restrictive;
 ///
 /// # Type Parameters
 ///
-/// - `T`: The sanitization directive, which must implement the [`SanitizePluginDirective`] trait. Defaults to [`Restrictive`].
+/// - `T`: The sanitization directive, which must implement the [`SanitizeDirective`] trait. Defaults to [`Restrictive`].
 ///
 /// # Example
 /// ```
@@ -39,13 +40,13 @@ use crate::Restrictive;
 ///   .remove(preset::LocalNamesMatcher::new(&["style", "script"]))
 ///   .build();
 /// ```
-pub struct PluginPolicyBuilder<T: SanitizePluginDirective = Restrictive> {
+pub struct PluginPolicyBuilder<T: SanitizeDirective = Restrictive> {
     exclude_checkers: Vec<Box<dyn NodeChecker>>,
     remove_checkers: Vec<Box<dyn NodeChecker>>,
     attr_exclude_checkers: Vec<Box<dyn AttrChecker>>,
     _directive: std::marker::PhantomData<T>,
 }
-impl<T: SanitizePluginDirective> Default for PluginPolicyBuilder<T> {
+impl<T: SanitizeDirective> Default for PluginPolicyBuilder<T> {
     fn default() -> Self {
         Self {
             exclude_checkers: vec![],
@@ -56,7 +57,7 @@ impl<T: SanitizePluginDirective> Default for PluginPolicyBuilder<T> {
     }
 }
 
-impl<T: SanitizePluginDirective> PluginPolicyBuilder<T> {
+impl<T: SanitizeDirective> PluginPolicyBuilder<T> {
     /// Creates a new `PluginPolicyBuilder` instance with default settings.
     pub fn new() -> Self {
         Self::default()

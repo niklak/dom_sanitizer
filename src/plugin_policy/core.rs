@@ -7,6 +7,7 @@ use tendril::StrTendril;
 
 use super::builder::PluginPolicyBuilder;
 use crate::{Permissive, Restrictive};
+use crate::traits::{SanitizeDirective, SanitizePolicy};
 
 /// A trait for checking whether a node matches certain criteria.
 ///
@@ -25,132 +26,18 @@ pub trait AttrChecker: Send + Sync {
     fn is_match_attr(&self, _node: &NodeRef, _attr: &Attribute) -> bool;
 }
 
-/// A trait for sanitization directives. Defines methods for node and attribute sanitization.
-pub trait SanitizePluginDirective {
-    /// Sanitizes a node by removing elements and attributes according to the policy.
-    ///
-    /// - [Permissive] directive: Excludes elements (without their children) specified in the policy.
-    ///   Removes element attributes specified in the policy.
-    /// - [Restrictive] directive: Keeps only the elements and attributes explicitly allowed by the policy.
-    ///
-    /// May also remove elements excluded by the basic policy rules.
-    fn sanitize_node(policy: &PluginPolicy<Self>, node: &NodeRef)
-    where
-        Self: Sized;
 
-    /// Sanitizes the attributes of a node by removing or retaining them based on the policy.
-    fn sanitize_node_attrs(policy: &PluginPolicy<Self>, node: &dom_query::NodeRef)
-    where
-        Self: Sized;
-}
-
-impl SanitizePluginDirective for Permissive {
-    /// Sanitizes the descendants of a node.
-    ///
-    /// - Removes elements that **match** any of the [`PluginPolicy<T>::exclude_checkers`], but preserves their children.
-    /// - Removes elements that match any of the [`PluginPolicy<T>::remove_checkers`], along with all their children.
-    /// - Removes element attributes that match any of the [`PluginPolicy<T>::attr_exclude_checkers`].
-    fn sanitize_node(policy: &PluginPolicy<Self>, node: &NodeRef) {
-        if policy.exclude_checkers.is_empty()
-            && policy.remove_checkers.is_empty()
-            && policy.attr_exclude_checkers.is_empty()
-        {
-            return;
-        }
-
-        let mut child = node.first_child();
-
-        while let Some(ref child_node) = child {
-            let next_node = child_node.next_sibling();
-            if policy.should_remove(child_node) {
-                child_node.remove_from_parent();
-                child = next_node;
-                continue;
-            }
-            if child_node.may_have_children() {
-                Self::sanitize_node(policy, child_node);
-            }
-
-            if policy.should_exclude(child_node) {
-                if let Some(first_inline) = child_node.first_child() {
-                    child_node.insert_siblings_before(&first_inline);
-                };
-                child_node.remove_from_parent();
-            }
-            Self::sanitize_node_attrs(policy, child_node);
-            child = next_node;
-        }
-    }
-
-    /// Removes element attributes that match any of the [`PluginPolicy<T>::attr_exclude_checkers`].
-    fn sanitize_node_attrs(policy: &PluginPolicy<Self>, node: &dom_query::NodeRef) {
-        if policy.attr_exclude_checkers.is_empty() {
-            return;
-        }
-
-        policy.exclude_attrs(node, |node, attrs| node.remove_attrs(attrs));
-    }
-}
-
-impl SanitizePluginDirective for Restrictive {
-    /// Sanitizes the descendants of a node.
-    ///
-    /// - Removes elements that **do not match** any of the [`PluginPolicy<T>::exclude_checkers`], but preserves their children.
-    /// - Removes elements that match any of the [`PluginPolicy<T>::remove_checkers`], along with all their children.
-    /// - Removes all element attributes that **do not match** any of the [`PluginPolicy<T>::attr_exclude_checkers`].
-    fn sanitize_node(policy: &PluginPolicy<Self>, node: &NodeRef) {
-        let mut child = node.first_child();
-
-        while let Some(ref child_node) = child {
-            let next_node = child_node.next_sibling();
-
-            if policy.should_remove(child_node) {
-                child_node.remove_from_parent();
-                child = next_node;
-                continue;
-            }
-            if child_node.may_have_children() {
-                policy.sanitize_node(child_node);
-            }
-            if !child_node.is_element() {
-                child = next_node;
-                continue;
-            }
-            if Self::should_skip(child_node) || policy.should_exclude(child_node) {
-                Self::sanitize_node_attrs(policy, child_node);
-                child = next_node;
-                continue;
-            }
-
-            if let Some(first_inline) = child_node.first_child() {
-                child_node.insert_siblings_before(&first_inline);
-            };
-            child_node.remove_from_parent();
-            child = next_node;
-        }
-    }
-
-    /// - Removes all element attributes that **do not match** any of the [`PluginPolicy<T>::attr_exclude_checkers`].
-    fn sanitize_node_attrs(policy: &PluginPolicy<Self>, node: &dom_query::NodeRef) {
-        if policy.attr_exclude_checkers.is_empty() {
-            node.remove_all_attrs();
-            return;
-        }
-
-        policy.exclude_attrs(node, |node, attrs| node.retain_attrs(attrs));
-    }
-}
 
 /// A plugin based policy for sanitizing HTML documents.
 #[derive(Clone)]
-pub struct PluginPolicy<T: SanitizePluginDirective = Restrictive> {
+pub struct PluginPolicy<T: SanitizeDirective = Restrictive> {
     pub exclude_checkers: Arc<[Box<dyn NodeChecker>]>,
     pub remove_checkers: Arc<[Box<dyn NodeChecker>]>,
     pub attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
-impl<T: SanitizePluginDirective> fmt::Debug for PluginPolicy<T> {
+impl<T: SanitizeDirective> fmt::Debug for PluginPolicy<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PluginPolicy")
             .field(
@@ -179,7 +66,7 @@ impl<T: SanitizePluginDirective> fmt::Debug for PluginPolicy<T> {
     }
 }
 
-impl<T: SanitizePluginDirective> PluginPolicy<T> {
+impl <T: SanitizeDirective> SanitizePolicy for PluginPolicy<T> {
     fn should_exclude(&self, node: &NodeRef) -> bool {
         for checker in self.exclude_checkers.iter() {
             if checker.is_match(node) {
@@ -197,13 +84,9 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
         }
         false
     }
-    fn should_exclude_attr(&self, node: &NodeRef, attr: &Attribute) -> bool {
-        for checker in self.attr_exclude_checkers.iter() {
-            if checker.is_match_attr(node, attr) {
-                return true;
-            }
-        }
-        false
+
+    fn has_attrs_to_exclude(&self) -> bool {
+        !self.attr_exclude_checkers.is_empty()
     }
 
     fn exclude_attrs<F>(&self, node: &NodeRef, exclude_fn: F)
@@ -217,6 +100,25 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
             .map(|a| a.name.local.as_ref())
             .collect();
         exclude_fn(node, &attrs)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.exclude_checkers.is_empty()
+            && self.remove_checkers.is_empty()
+            && self.attr_exclude_checkers.is_empty()
+    }
+}
+
+impl<T: SanitizeDirective> PluginPolicy<T> {
+    
+    
+    fn should_exclude_attr(&self, node: &NodeRef, attr: &Attribute) -> bool {
+        for checker in self.attr_exclude_checkers.iter() {
+            if checker.is_match_attr(node, attr) {
+                return true;
+            }
+        }
+        false
     }
 
     /// Sanitizes a node by applying the policy rules according to the directive type.
@@ -241,7 +143,7 @@ impl<T: SanitizePluginDirective> PluginPolicy<T> {
     }
 }
 
-impl<T: SanitizePluginDirective> PluginPolicy<T> {
+impl<T: SanitizeDirective> PluginPolicy<T> {
     /// Creates a new [`PluginPolicyBuilder`] instance with the specified directive type.
     pub fn builder() -> PluginPolicyBuilder<T> {
         PluginPolicyBuilder::new()
