@@ -16,7 +16,7 @@ fn bench_dom_query(c: &mut Criterion) {
         .remove_elements(&["style"])
         .build();
     c.bench_function("sanitize_deny_all", |b| {
-        b.iter(|| sanitize_deny_all(black_box(&contents), black_box(&policy)))
+        b.iter(|| sanitize_deny_all(black_box(contents), black_box(&policy)))
     });
 }
 
