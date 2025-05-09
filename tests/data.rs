@@ -29,6 +29,6 @@ pub static SVG_CONTENTS: &str = r#"
             <circle cx="50" cy="50" r="30" style="fill:url(#gradient)" />
         </svg>
         <p>Some text</p>
-        <div>Some other text</div>
+        <div class="text">Some other text</div>
     </body>
 </html>"#;

@@ -327,6 +327,7 @@ fn test_permissive_policy_svg_class() {
 
     assert!(!doc.select("svg *[style]").exists());
     assert!(!doc.select("svg *[class]").exists());
+    assert!(doc.select("div[class]").exists());
 }
 
 #[test]
