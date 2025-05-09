@@ -559,6 +559,84 @@ It utilizes the `atomic` feature, which is required to share `dom_query::Documen
 ```
 </details>
 
+<details>
+<summary><b>Allowing a Namespace in a Restrictive Plugin Policy (SVG)</b></summary>
+
+When sanitizing elements such as `<svg>` or `<math>`, explicitly listing all allowed elements and attributes can be overly verbose.
+Instead, you can create a `NodeChecker` that allows all elements within a specific namespace, or an `AttrChecker` that allows all attributes for certain elements.
+
+```rust
+use dom_query::{Document, NodeRef};
+use dom_sanitizer::plugin_policy::{preset, AttrChecker, PluginPolicy};
+use dom_sanitizer::Restrictive;
+use html5ever::{ns, LocalName};
+
+// HTML with a **malicious** SVG
+let contents: &str = r#"
+<!DOCTYPE html>
+<html>
+    <head><title>Test</title></head>
+    <body>
+        <svg oncontentvisibilityautostatechange=alert(1) style=display:block;content-visibility:auto
+            viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" role="img">
+            <title>A gradient</title>
+            <linearGradient id="gradient">
+                <stop class="begin" offset="0%" stop-color="red" />
+                <stop class="end" offset="100%" stop-color="black" />
+            </linearGradient>
+            <rect x="0" y="0" width="100" height="100" style="fill:url(#gradient)" />
+            <circle cx="50" cy="50" r="30" style="fill:url(#gradient)" />
+        </svg>
+        <p>Some text</p>
+        <div>Some other text</div>
+    </body>
+</html>"#;
+
+    // Define a custom attribute checker that allows all attributes 
+    // for elements in the SVG namespace, except those whose names start with "on".
+    struct SvgSafeAttrs;
+
+    impl AttrChecker for SvgSafeAttrs {
+        fn is_match_attr(&self, node: &NodeRef, attr: &html5ever::Attribute) -> bool {
+            if !node
+                .qual_name_ref()
+                .map_or(false, |name| name.ns == ns!(svg))
+            {
+                return false;
+            }
+            !attr.name.local.to_ascii_lowercase().starts_with("on")
+        }
+    }
+    // Create a policy that strips all elements and attributes,
+    // except those explicitly excluded.
+    let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
+        // Allow all elements from the SVG namespace.
+        .exclude(preset::NamespaceMatcher(ns!(svg)))
+        // Also allow <div> elements.
+        .exclude(preset::LocalNameMatcher::new("div"))
+        // Allow all attributes on elements in the SVG namespace, except those starting with `on`.
+        .exclude_attr(SvgSafeAttrs)
+        .build();
+
+    let doc = Document::from(contents);
+
+    policy.sanitize_document(&doc);
+    
+    // The SVG no longer has the `oncontentvisibilityautostatechange` attribute.
+    assert!(!doc
+        .select("svg[oncontentvisibilityautostatechange]")
+        .exists());
+    // The SVG still has the `style` attribute.
+    assert!(doc.select("svg[style]").exists());
+    // Other elements in the SVG namespace still have their attributes.
+    assert!(doc.select("circle[r][style]").exists());
+    assert!(doc.select("rect[width][height][style]").exists());
+    // The <div> element was preserved.
+    assert!(doc.select("div").exists());
+    // The <p> element was removed.
+    assert!(!doc.select("p").exists());
+```
+</details>
 
 ## Crate Features
 
