@@ -3,10 +3,10 @@ use dom_sanitizer::plugin_policy::core::{PermissivePluginPolicy, RestrictivePlug
 use dom_sanitizer::plugin_policy::preset::AttrMatcher;
 use dom_sanitizer::plugin_policy::{preset, AttrChecker, NodeChecker, PluginPolicy};
 use dom_sanitizer::{Permissive, Restrictive};
-use html5ever::LocalName;
+use html5ever::{ns, LocalName};
 
 mod data;
-use data::PARAGRAPH_CONTENTS;
+use data::{PARAGRAPH_CONTENTS, SVG_CONTENTS};
 use regex::Regex;
 
 struct ExcludeOnlyHttps;
@@ -287,4 +287,86 @@ fn test_plugin_policy_debug_fmt() {
     assert!(
         debug_output.contains("_directive: PhantomData<dom_sanitizer::directives::Restrictive>")
     );
+}
+
+#[test]
+fn test_permissive_plugin_policy_svg() {
+    let policy = PermissivePluginPolicy::builder()
+        .exclude(preset::NamespaceMatcher::new("http://www.w3.org/2000/svg"))
+        .exclude(preset::LocalNameMatcher::new("div"))
+        .build();
+
+    let doc = Document::from(SVG_CONTENTS);
+
+    assert!(doc.select("svg").exists());
+    assert!(doc.select("rect").exists());
+    assert!(doc.select("div").exists());
+
+    policy.sanitize_document(&doc);
+
+    // The policy should remove the SVG element and its contents
+    assert!(!doc.select("svg").exists());
+    assert!(!doc.select("rect").exists());
+    assert!(!doc.select("div").exists());
+}
+
+#[test]
+fn test_permissive_policy_svg_class() {
+    let policy = PermissivePluginPolicy::builder()
+        .exclude_attr(preset::NsAttrMatcher::new(
+            "http://www.w3.org/2000/svg",
+            &["class", "style"],
+        ))
+        .build();
+
+    let doc = Document::from(SVG_CONTENTS);
+    assert!(doc.select("svg *[style]").exists());
+    assert!(doc.select("svg *[class]").exists());
+
+    policy.sanitize_document(&doc);
+
+    assert!(!doc.select("svg *[style]").exists());
+    assert!(!doc.select("svg *[class]").exists());
+}
+
+#[test]
+fn test_restrictive_plugin_policy_svg() {
+    struct SvgSafeAttrs;
+
+    impl AttrChecker for SvgSafeAttrs {
+        fn is_match_attr(&self, node: &NodeRef, attr: &html5ever::Attribute) -> bool {
+            if !node
+                .qual_name_ref()
+                .map_or(false, |name| name.ns == ns!(svg))
+            {
+                return false;
+            }
+            !attr.name.local.to_ascii_lowercase().starts_with("on")
+        }
+    }
+
+    let policy = RestrictivePluginPolicy::builder()
+        .exclude(preset::NamespaceMatcher::new("http://www.w3.org/2000/svg"))
+        .exclude(preset::LocalNameMatcher::new("div"))
+        .exclude_attr(SvgSafeAttrs)
+        .build();
+
+    let doc = Document::from(SVG_CONTENTS);
+
+    assert!(doc
+        .select("svg[style][oncontentvisibilityautostatechange]")
+        .exists());
+    assert!(doc.select("rect[width][height][style]").exists());
+    assert!(doc.select("div").exists());
+    assert!(doc.select("p").exists());
+
+    policy.sanitize_document(&doc);
+
+    assert!(!doc
+        .select("svg[oncontentvisibilityautostatechange]")
+        .exists());
+    assert!(doc.select("svg[style]").exists());
+    assert!(doc.select("rect[width][height][style]").exists());
+    assert!(doc.select("div").exists());
+    assert!(!doc.select("p").exists());
 }

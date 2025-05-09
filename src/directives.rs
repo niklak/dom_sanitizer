@@ -25,11 +25,11 @@ impl SanitizeDirective for Permissive {
             }
 
             next_node = next_child_or_sibling(&child, false);
-
             if !policy.should_exclude(&child) {
                 Self::sanitize_node_attrs(policy, &child);
                 continue;
             }
+
             if let Some(first_inline) = child.first_child() {
                 child.insert_siblings_before(&first_inline);
             };
@@ -53,7 +53,7 @@ pub struct Restrictive;
 
 impl Restrictive {
     /// Checks if the node should be skipped during sanitization and never be removed.
-    pub(crate) fn should_skip(node: &NodeRef) -> bool {
+    fn should_skip(node: &NodeRef) -> bool {
         node.qual_name_ref().map_or(false, |qual_name| {
             matches!(
                 qual_name.local,
