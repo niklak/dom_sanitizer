@@ -568,11 +568,11 @@ Instead, you can create a `NodeChecker` that allows all elements within a specif
 ```rust
 use dom_query::{Document, NodeRef};
 use dom_sanitizer::plugin_policy::{preset, AttrChecker, PluginPolicy};
-use dom_sanitizer::{Permissive, Restrictive};
+use dom_sanitizer::Restrictive;
 use html5ever::{ns, LocalName};
 
 // HTML with a **malicious** SVG
-let content: &str = r#"
+let contents: &str = r#"
 <!DOCTYPE html>
 <html>
     <head><title>Test</title></head>
@@ -611,14 +611,14 @@ let content: &str = r#"
     // except those explicitly excluded.
     let policy: PluginPolicy<Restrictive> = PluginPolicy::builder()
         // Allow all elements from the SVG namespace.
-        .exclude(preset::NamespaceMatcher::new("http://www.w3.org/2000/svg"))
+        .exclude(preset::NamespaceMatcher(ns!(svg)))
         // Also allow <div> elements.
         .exclude(preset::LocalNameMatcher::new("div"))
         // Allow all attributes on elements in the SVG namespace, except those starting with `on`.
         .exclude_attr(SvgSafeAttrs)
         .build();
 
-    let doc = Document::from(content);
+    let doc = Document::from(contents);
 
     policy.sanitize_document(&doc);
     
