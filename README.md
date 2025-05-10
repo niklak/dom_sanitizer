@@ -9,6 +9,14 @@
 > Built on top of [dom_query](https://github.com/niklak/dom_query)
 
 
+## Motivation
+
+Ensuring the safety and clarity of HTML content is essential for modern web applications. Beyond defending against threats like Cross-Site Scripting (XSS), it's often necessary to remove unwanted or irrelevant markup—such as ads, tracking elements, or redundant tags. While many sanitization libraries exist, they often fall short in *usability*, *flexibility*, or *extensibility*.
+
+- **Ease of Use**: This library offers a simple and ergonomic API, making it easy to integrate into any Rust project with minimal setup.
+- **Flexibility**: Configure sanitization using permissive or restrictive policies — choose whether to allow or deny content by default, and fine-tune what elements and attributes are excluded from the base policy.
+- **Extensibility**: A plugin-style policy system lets you implement custom checkers to exclude specific elements or attributes from the base policy. This enables advanced logic, such as applying regular expressions to control content inclusion, or skipping entire namespaces like SVG or MathML during sanitization.
+- **Thread Safety**: Sanitization policies are immutable after construction and can be safely shared across threads, making them ideal for use in concurrent environments.
 
 
 ## Examples
