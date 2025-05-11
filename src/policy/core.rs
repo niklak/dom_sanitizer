@@ -13,12 +13,12 @@ fn is_node_name_in(names: &[LocalName], node: &NodeRef) -> bool {
 
 /// An **excluding** rule for sanitizing attributes of a specific element.
 #[derive(Debug, Clone, Default)]
-pub struct AttributeRule<'a> {
+pub (crate) struct AttributeRule<'a> {
     /// The name of the element to which this rule applies.
     /// If `None`, the rule applies to all elements.
-    pub element: Option<LocalName>,
+    pub (crate) element: Option<LocalName>,
     /// The list of attribute keys to be excluded.
-    pub attributes: &'a [&'a str],
+    pub (crate) attributes: &'a [&'a str],
 }
 
 #[derive(Debug, Clone)]
@@ -26,25 +26,14 @@ pub struct Policy<'a, T: SanitizeDirective = Restrictive> {
     /// The list of excluding rules for attributes.
     /// For [Permissive] directive: attributes to remove
     /// For [Restrictive] directive: attributes to keep
-    pub attrs_to_exclude: Vec<AttributeRule<'a>>,
+    pub (crate) attrs_to_exclude: Vec<AttributeRule<'a>>,
     /// The list of element names excluded from the base [Policy].
     /// For [Permissive] directive: elements to remove (keeping their children)
     /// For [Restrictive] directive: elements to keep
-    pub elements_to_exclude: Vec<LocalName>,
+    pub (crate) elements_to_exclude: Vec<LocalName>,
     /// Specifies the names of elements to remove from the DOM with their children during sanitization.
-    pub elements_to_remove: Vec<LocalName>,
-    pub(crate) _directive: std::marker::PhantomData<T>,
-}
-
-impl<T: SanitizeDirective> Default for Policy<'_, T> {
-    fn default() -> Self {
-        Self {
-            attrs_to_exclude: Vec::new(),
-            elements_to_exclude: Vec::new(),
-            elements_to_remove: Vec::new(),
-            _directive: std::marker::PhantomData,
-        }
-    }
+    pub (crate) elements_to_remove: Vec<LocalName>,
+    pub (crate) _directive: std::marker::PhantomData<T>,
 }
 
 impl<T: SanitizeDirective> Policy<'_, T> {
@@ -118,7 +107,7 @@ impl<'a, T: SanitizeDirective> Policy<'a, T> {
 
     /// Creates a new [`Policy`] with default values.
     pub fn new() -> Self {
-        Self::default()
+        Self::builder().build()
     }
 }
 

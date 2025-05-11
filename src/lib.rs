@@ -7,5 +7,6 @@ pub mod plugin_policy;
 pub mod policy;
 pub mod traits;
 
+#[doc(inline)]
 pub use directives::{Permissive, Restrictive};
 pub use policy::*;
