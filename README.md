@@ -1,5 +1,8 @@
 # dom_sanitizer
 
+[![Crates.io version](https://img.shields.io/crates/v/dom_sanitizer.svg?style=flat)](https://crates.io/crates/dom_sanitizer)
+[![Download](https://img.shields.io/crates/d/dom_sanitizer.svg?style=flat)](https://crates.io/crates/dom_sanitizer)
+[![docs.rs docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](https://docs.rs/dom_sanitizer)
 [![codecov](https://codecov.io/github/niklak/dom_sanitizer/graph/badge.svg?token=Y3EN2HE4SR)](https://codecov.io/github/niklak/dom_sanitizer)
 
 [![Rust CI](https://github.com/niklak/dom_sanitizer/actions/workflows/rust.yml/badge.svg)](https://github.com/niklak/dom_sanitizer/actions/workflows/rust.yml)

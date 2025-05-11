@@ -7,7 +7,7 @@ rust-version = "1.66"
 repository = "https://github.com/niklak/dom_sanitizer"
 authors = ["niklak <morgenpurple@gmail.com>"]
 exclude = [".*", "test-pages", "examples", "benches"]
-
+keywords = ["html", "dom", "sanitization"]
 
 [dependencies]
 dom_query = {version = "0.18.0"}
