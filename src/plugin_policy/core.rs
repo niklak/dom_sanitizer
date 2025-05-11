@@ -29,9 +29,9 @@ pub trait AttrChecker: Send + Sync {
 /// A plugin based policy for sanitizing HTML documents.
 #[derive(Clone)]
 pub struct PluginPolicy<T: SanitizeDirective = Restrictive> {
-    pub exclude_checkers: Arc<[Box<dyn NodeChecker>]>,
-    pub remove_checkers: Arc<[Box<dyn NodeChecker>]>,
-    pub attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]>,
+    pub(crate) exclude_checkers: Arc<[Box<dyn NodeChecker>]>,
+    pub(crate) remove_checkers: Arc<[Box<dyn NodeChecker>]>,
+    pub(crate) attr_exclude_checkers: Arc<[Box<dyn AttrChecker>]>,
     pub(crate) _directive: std::marker::PhantomData<T>,
 }
 
