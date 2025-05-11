@@ -64,7 +64,7 @@ fn test_permissive_policy_attrs() {
 
 #[test]
 fn test_restrictive_policy_simple() {
-    let policy = DenyAllPolicy::new();
+    let policy = DenyAllPolicy::builder().build();
     let doc = Document::from(PARAGRAPH_CONTENTS);
     doc.root().sanitize(&policy);
     assert!(!doc.select("div").exists());
@@ -84,7 +84,7 @@ fn test_restrictive_policy_simple() {
 
 #[test]
 fn test_permissive_policy_simple() {
-    let policy = AllowAllPolicy::new();
+    let policy = AllowAllPolicy::builder().build();
     let doc = Document::from(PARAGRAPH_CONTENTS);
     doc.sanitize(&policy);
 
