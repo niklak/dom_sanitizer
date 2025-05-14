@@ -2,6 +2,7 @@ use dom_query::NodeRef;
 
 use html5ever::local_name;
 
+use crate::dom_helpers::next_child_or_sibling;
 use crate::traits::{SanitizeDirective, SanitizePolicy};
 
 /// A base sanitization directive, which allows all elements and attributes,
@@ -100,25 +101,4 @@ impl SanitizeDirective for Restrictive {
         }
         policy.exclude_attrs(node, |node, attrs| node.retain_attrs(attrs));
     }
-}
-
-fn next_child_or_sibling<'a>(node: &NodeRef<'a>, ignore_child: bool) -> Option<NodeRef<'a>> {
-    if !ignore_child {
-        if let Some(first_child) = node.first_element_child() {
-            return Some(first_child);
-        }
-    }
-
-    if let Some(sibling) = node.next_element_sibling() {
-        return Some(sibling);
-    }
-    let mut parent = node.parent();
-    while let Some(parent_node) = parent {
-        if let Some(next_sibling) = parent_node.next_element_sibling() {
-            return Some(next_sibling);
-        } else {
-            parent = parent_node.parent()
-        }
-    }
-    None
 }
