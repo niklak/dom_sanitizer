@@ -17,15 +17,15 @@ impl SanitizeDirective for Permissive {
         if policy.is_empty() {
             return;
         }
-        let mut next_node = next_child_or_sibling(node, false);
+        let mut next_node = node.first_element_child();
         while let Some(child) = next_node {
             if policy.should_remove(&child) {
-                next_node = next_child_or_sibling(&child, true);
+                next_node = next_child_or_sibling(&child, true, node);
                 child.remove_from_parent();
                 continue;
             }
 
-            next_node = next_child_or_sibling(&child, false);
+            next_node = next_child_or_sibling(&child, false, node);
             if !policy.should_exclude(&child) {
                 Self::sanitize_node_attrs(policy, &child);
                 continue;
@@ -70,15 +70,15 @@ impl SanitizeDirective for Restrictive {
     /// Removes attributes from the element node with exception of
     /// attributes listed in policy.
     fn sanitize_node(policy: &impl SanitizePolicy, node: &NodeRef) {
-        let mut next_node = next_child_or_sibling(node, false);
+        let mut next_node = node.first_element_child();
         while let Some(child) = next_node {
             if policy.should_remove(&child) {
-                next_node = next_child_or_sibling(&child, true);
+                next_node = next_child_or_sibling(&child, true, node);
                 child.remove_from_parent();
                 continue;
             }
 
-            next_node = next_child_or_sibling(&child, false);
+            next_node = next_child_or_sibling(&child, false, node);
 
             if Self::should_skip(&child) || policy.should_exclude(&child) {
                 Self::sanitize_node_attrs(policy, &child);
