@@ -1,4 +1,4 @@
-use dom_query::{Document, NodeRef};
+use dom_query::NodeRef;
 use html5ever::LocalName;
 use tendril::StrTendril;
 

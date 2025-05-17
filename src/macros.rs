@@ -25,7 +25,7 @@ macro_rules! sanitize_methods {
 
         /// Sanitizes the HTML content by applying the policy rules according to the directive type.
         pub fn sanitize_html<S: Into<StrTendril>>(&self, html: S) -> StrTendril {
-            let doc = Document::from(html);
+            let doc = dom_query::Document::from(html);
             self.sanitize_document(&doc);
             doc.html()
         }

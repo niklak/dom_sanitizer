@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use dom_query::{Document, NodeRef};
+use dom_query::NodeRef;
 use html5ever::Attribute;
 use tendril::StrTendril;
 
