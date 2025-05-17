@@ -1,4 +1,6 @@
 macro_rules! sanitize_methods {
+    // This macro generates sanitization methods for a type implementing a sanitization trait T.
+    // T must provide a `sanitize_node` method that the generated methods will delegate to.
     () => {
         /// Sanitizes a node by applying the policy rules according to the directive type.
         ///

@@ -162,7 +162,5 @@ fn test_restrictive_selection() {
     assert!(!doc.select("p:only-text").exists());
 
     sel.sanitize(&policy);
-    //policy.sanitize_selection(&doc.select("p"));
-
     assert_eq!(doc.select("p:only-text").length(), 4);
 }
