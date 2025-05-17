@@ -153,3 +153,14 @@ fn test_restrictive_policy_remove_html() {
     assert!(!html.contains("<style>"));
     assert!(!html.contains("border-collapse: collapse"));
 }
+
+#[test]
+fn test_restrictive_selection() {
+    let policy = DenyAllPolicy::builder().build();
+    let doc = Document::from(PARAGRAPH_CONTENTS);
+    let sel = doc.select("p");
+    assert!(!doc.select("p:only-text").exists());
+
+    sel.sanitize(&policy);
+    assert_eq!(doc.select("p:only-text").length(), 4);
+}
