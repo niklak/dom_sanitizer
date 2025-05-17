@@ -6,6 +6,7 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use super::builder::PluginPolicyBuilder;
+use crate::macros::sanitize_methods;
 use crate::traits::{SanitizeDirective, SanitizePolicy};
 use crate::{Permissive, Restrictive};
 
@@ -110,27 +111,10 @@ impl<T: SanitizeDirective> PluginPolicy<T> {
         }
         false
     }
+}
 
-    /// Sanitizes a node by applying the policy rules according to the directive type.
-    ///
-    /// For [Permissive] directive: Removes elements and attributes specified in the policy.
-    /// For [Restrictive] directive: Keeps only elements and attributes specified in the policy.
-    pub fn sanitize_node(&self, node: &NodeRef) {
-        T::sanitize_node(self, node);
-        node.normalize();
-    }
-
-    /// Sanitizes the document.
-    pub fn sanitize_document(&self, document: &Document) {
-        self.sanitize_node(&document.root());
-    }
-
-    /// Sanitizes the HTML content by applying the policy rules according to the directive type.
-    pub fn sanitize_html<S: Into<StrTendril>>(&self, html: S) -> StrTendril {
-        let doc = Document::from(html);
-        self.sanitize_document(&doc);
-        doc.html()
-    }
+impl<T: SanitizeDirective> PluginPolicy<T> {
+    sanitize_methods!();
 }
 
 impl<T: SanitizeDirective> PluginPolicy<T> {

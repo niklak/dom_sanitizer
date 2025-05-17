@@ -21,3 +21,10 @@ impl SanitizeExt for Document {
         policy.sanitize_document(self);
     }
 }
+
+impl SanitizeExt for dom_query::Selection<'_> {
+    /// Sanitizes all nodes in the selection using the provided policy.
+    fn sanitize<T: SanitizeDirective>(&self, policy: &Policy<T>) {
+        policy.sanitize_selection(self);
+    }
+}

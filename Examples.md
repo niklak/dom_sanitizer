@@ -243,6 +243,47 @@ for handle in handles {
 </details>
 
 
+<details> 
+<summary><b>Sanitizing Only Nodes Inside a Selection</b></summary>
+
+`dom_sanitizer` allows you to apply sanitization only to nodes within a selected set of nodes. 
+This is useful when you want to sanitize specific parts of a document without affecting the rest of it.
+
+```rust
+use dom_sanitizer::RestrictivePolicy;
+use dom_query::Document;
+
+let contents: &str = r#"
+    <!DOCTYPE html>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <style>
+                p { border-bottom: 2px solid black; }
+            </style>
+            <div><p role="paragraph">The first paragraph contains <a href="/first" role="link">the first link</a>.</p></div>
+            <div><p role="paragraph">The second paragraph contains <a href="/second" role="link">the second link</a>.</p></div>
+            <div><p role="paragraph">The third paragraph contains <a href="/third" role="link">the third link</a>.</p></div>
+            <div><p id="highlight" role="paragraph"><mark>highlighted text</mark>, <b>bold text</b></p></div>
+            <div></div>
+        </body>
+    </html>"#;
+let policy = RestrictivePolicy::builder().build();
+let doc = Document::from(contents);
+
+// Before sanitization, there are no paragraphs that contain only text content
+assert!(!doc.select("p:only-text").exists());
+
+let sel = doc.select("p");
+policy.sanitize_selection(&sel);
+
+// After sanitization, all paragraphs contain only text content
+assert_eq!(doc.select("p:only-text").length(), 4);
+
+```
+</details>
+
+
 ---
 When the basic `Policy` capabilities are not enough, `PluginPolicy` allows
 you to define a fully customized sanitization policy.
