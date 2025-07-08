@@ -215,9 +215,18 @@ dependencies = [
 
 [[package]]
 name = "derive_more"
-version = "0.99.19"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3da29a38df43d6f156149c9b43ded5e018ddff2a855cf2cfd62e8cd7d079c69f"
+checksum = "093242cf7570c207c83073cf82f79706fe7b8317e98620a47d5be7c3d8497678"
+dependencies = [
+ "derive_more-impl",
+]
+
+[[package]]
+name = "derive_more-impl"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bda628edc44c4bb645fbe0f758797143e4e07926f7ebf4e9bdfbd3d2ce621df3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -226,9 +235,9 @@ dependencies = [
 
 [[package]]
 name = "dom_query"
-version = "0.19.1"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c30665d6c3bb5da3a7caac0757f6bb19ae626c770a30bb690180fa79d1e88cb"
+checksum = "0e15ec22254746877b15e0a9c1221c4d2321ac26f14156ff0ce86859a819c6e3"
 dependencies = [
  "bit-set",
  "cssparser",
@@ -241,7 +250,7 @@ dependencies = [
 
 [[package]]
 name = "dom_sanitizer"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "criterion",
  "dom_query",
@@ -308,12 +317,11 @@ dependencies = [
 
 [[package]]
 name = "html5ever"
-version = "0.31.0"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "953cbbe631aae7fc0a112702ad5d3aaf09da38beaf45ea84610d6e1c358f569c"
+checksum = "55d958c2f74b664487a2035fe1dadb032c48718a03b63f3ab0b8537db8549ed4"
 dependencies = [
  "log",
- "mac",
  "markup5ever",
  "match_token",
 ]
@@ -382,9 +390,9 @@ checksum = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
 
 [[package]]
 name = "markup5ever"
-version = "0.16.1"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0a8096766c229e8c88a3900c9b44b7e06aa7f7343cc229158c3e58ef8f9973a"
+checksum = "311fe69c934650f8f19652b3946075f0fc41ad8757dbb68f1ca14e7900ecc1c3"
 dependencies = [
  "log",
  "tendril",
@@ -393,9 +401,9 @@ dependencies = [
 
 [[package]]
 name = "match_token"
-version = "0.1.0"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88a9689d8d44bf9964484516275f5cd4c9b59457a6940c1d5d0ecbb94510a36b"
+checksum = "ac84fd3f360fcc43dc5f5d186f02a94192761a080e8bc58621ad4d12296a58cf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -664,9 +672,9 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "selectors"
-version = "0.27.0"
+version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b75e048a93e14929e68e37b82e207db957cbb368375a80ed3ca28ac75080856"
+checksum = "3df44ba8a7ca7a4d28c589e04f526266ed76b6cc556e33fe69fa25de31939a65"
 dependencies = [
  "bitflags",
  "cssparser",

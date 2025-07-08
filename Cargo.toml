@@ -1,6 +1,6 @@
 [package]
 name = "dom_sanitizer"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 license = "MIT"
 rust-version = "1.66"
@@ -12,8 +12,8 @@ description = "Flexible HTML sanitization for Rust — build policies and saniti
 
 
 [dependencies]
-dom_query = {version = "0.19.1"}
-html5ever = {version = "0.31.0"}
+dom_query = {version = "0.19.2"}
+html5ever = {version = "0.35.0"}
 tendril = {version = "0.4.3"}
 
 [dev-dependencies]
