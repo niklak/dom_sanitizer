@@ -18,7 +18,7 @@ tendril = {version = "0.4.3"}
 
 [dev-dependencies]
 regex = {version = "1.11.1"}
-criterion = { version = "0.6.0", features = ["html_reports"] }
+criterion = { version = "0.7.0", features = ["html_reports"] }
 
 [features]
 default = []
