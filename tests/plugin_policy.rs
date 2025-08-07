@@ -276,7 +276,7 @@ fn test_plugin_policy_debug_fmt() {
         .exclude_attr(crate::preset::AttrMatcher::new(None, &["role"]))
         .build();
 
-    let debug_output = format!("{:?}", policy);
+    let debug_output = format!("{policy:?}");
 
     assert!(debug_output.contains("PluginPolicy"));
     assert!(debug_output.contains("exclude_checkers: Arc<[Box<dyn NodeChecker>]> (1 elements)"));
