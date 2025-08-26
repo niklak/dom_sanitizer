@@ -12,7 +12,7 @@ description = "Flexible HTML sanitization for Rust — build policies and saniti
 
 
 [dependencies]
-dom_query = {version = "0.20.2"}
+dom_query = {version = "0.21.0"}
 html5ever = {version = "0.35.0"}
 tendril = {version = "0.4.3"}
 
