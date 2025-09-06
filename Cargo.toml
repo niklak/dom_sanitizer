@@ -7,8 +7,6 @@ repository = "https://github.com/niklak/dom_sanitizer"
 authors = ["niklak <morgenpurple@gmail.com>"]
 
 
-
-workspace = { members = ["crates/bench"] }
 [package]
 name = "dom_sanitizer"
 version.workspace = true
