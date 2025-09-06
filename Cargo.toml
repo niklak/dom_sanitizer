@@ -1,12 +1,22 @@
-workspace = { members = ["crates/bench"] }
-[package]
-name = "dom_sanitizer"
+[workspace.package]
 version = "0.2.4"
 edition = "2021"
 license = "MIT"
 rust-version = "1.75"
 repository = "https://github.com/niklak/dom_sanitizer"
 authors = ["niklak <morgenpurple@gmail.com>"]
+
+
+
+workspace = { members = ["crates/bench"] }
+[package]
+name = "dom_sanitizer"
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
 exclude = [".*", "test-pages", "examples", "deny.toml"]
 keywords = ["html", "dom", "sanitization"]
 description = "Flexible HTML sanitization for Rust — build policies and sanitize documents easily."
@@ -29,6 +39,7 @@ atomic = ["dom_query/atomic"]
 name = "shared_plugin_policy"
 required-features = ["atomic"]
 
+[workspace]
 members = [
     "crates/bench"
 ]
