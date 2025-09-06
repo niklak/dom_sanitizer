@@ -1,3 +1,4 @@
+workspace = { members = ["crates/bench"] }
 [package]
 name = "dom_sanitizer"
 version = "0.2.4"
@@ -6,7 +7,7 @@ license = "MIT"
 rust-version = "1.75"
 repository = "https://github.com/niklak/dom_sanitizer"
 authors = ["niklak <morgenpurple@gmail.com>"]
-exclude = [".*", "test-pages", "examples", "benches"]
+exclude = [".*", "test-pages", "examples"]
 keywords = ["html", "dom", "sanitization"]
 description = "Flexible HTML sanitization for Rust — build policies and sanitize documents easily."
 
@@ -18,7 +19,6 @@ tendril = {version = "0.4.3"}
 
 [dev-dependencies]
 regex = {version = "1.11.2"}
-criterion = { version = "0.7.0", features = ["html_reports"] }
 
 [features]
 default = []
@@ -29,6 +29,6 @@ atomic = ["dom_query/atomic"]
 name = "shared_plugin_policy"
 required-features = ["atomic"]
 
-[[bench]]
-name = "policy"
-harness = false
+members = [
+    "crates/bench"
+]

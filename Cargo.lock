@@ -30,6 +30,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
+name = "bench"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "dom_query",
+ "dom_sanitizer",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -252,7 +261,6 @@ dependencies = [
 name = "dom_sanitizer"
 version = "0.2.4"
 dependencies = [
- "criterion",
  "dom_query",
  "html5ever",
  "regex",
