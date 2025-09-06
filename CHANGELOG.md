@@ -3,6 +3,12 @@
 All notable changes to the `dom_sanitizer` crate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.2.4] - 2025-09-06
+
+### Changed
+- Updated `dom_query` dependency version from 0.20.1 to 0.22.0
+- Set MSRV to 1.75.
+
 ## [0.2.3] - 2025-08-07
 
 ### Changed
