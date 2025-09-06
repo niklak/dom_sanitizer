@@ -9,7 +9,7 @@ impl NodeChecker for ExcludeOnlyHttps {
         node.has_name("a")
             && node
                 .attr("href")
-                .map_or(false, |href| href.starts_with("https://"))
+                .is_some_and(|href| href.starts_with("https://"))
     }
 }
 

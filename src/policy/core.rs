@@ -9,7 +9,7 @@ use crate::{Permissive, Restrictive};
 
 fn is_node_name_in(names: &[LocalName], node: &NodeRef) -> bool {
     node.qual_name_ref()
-        .map_or(false, |qual_name| names.contains(&qual_name.local))
+        .is_some_and(|qual_name| names.contains(&qual_name.local))
 }
 
 /// An **excluding** rule for sanitizing attributes of a specific element.

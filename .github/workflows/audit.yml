@@ -1,4 +1,4 @@
-name: Rust Clippy & Audit
+name: Rust Audit
 
 on:
   push:
@@ -11,15 +11,30 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+
+  msrv-verify:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: 1.75.0
+    - name: Install cargo msrv
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-msrv
+    - name: Verify MSRV
+      run: cargo msrv verify
+
   audit:
-
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - name: Run clippy
       run: cargo clippy --verbose --all-targets --all-features -- -D warnings
-    - name: Install cargo audit
-      uses: taiki-e/install-action@cargo-audit
-    - name: Run audit
-      run: cargo audit
+    - name: Install cargo deny
+      uses: taiki-e/install-action@cargo-deny
+    - name: Check advisories
+      run: cargo deny check advisories
+    - name: Check bans
+      run: cargo deny check bans
