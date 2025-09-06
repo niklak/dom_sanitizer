@@ -15,7 +15,7 @@ impl NodeChecker for ExcludeOnlyHttps {
         node.has_name("a")
             && node
                 .attr("href")
-                .map_or(false, |href| href.starts_with("https://"))
+                .is_some_and(|href| href.starts_with("https://"))
     }
 }
 
@@ -25,7 +25,7 @@ impl NodeChecker for ExcludeNoHttps {
         node.has_name("a")
             && node
                 .attr("href")
-                .map_or(false, |href| !href.starts_with("https://"))
+                .is_some_and(|href| !href.starts_with("https://"))
     }
 }
 
@@ -338,7 +338,7 @@ fn test_restrictive_plugin_policy_svg() {
         fn is_match_attr(&self, node: &NodeRef, attr: &html5ever::Attribute) -> bool {
             if !node
                 .qual_name_ref()
-                .map_or(false, |name| name.ns == ns!(svg))
+                .is_some_and(|name| name.ns == ns!(svg))
             {
                 return false;
             }

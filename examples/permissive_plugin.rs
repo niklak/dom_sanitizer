@@ -10,7 +10,7 @@ pub struct MatchLocalName(pub LocalName);
 impl NodeChecker for MatchLocalName {
     fn is_match(&self, node: &NodeRef) -> bool {
         node.qual_name_ref()
-            .map_or(false, |qual_name| self.0 == qual_name.local)
+            .is_some_and(|qual_name| self.0 == qual_name.local)
     }
 }
 
