@@ -55,7 +55,7 @@ pub struct Restrictive;
 impl Restrictive {
     /// Checks if the node should be skipped during sanitization and never be removed.
     fn should_skip(node: &NodeRef) -> bool {
-        node.qual_name_ref().map_or(false, |qual_name| {
+        node.qual_name_ref().is_some_and(|qual_name| {
             matches!(
                 qual_name.local,
                 local_name!("html") | local_name!("head") | local_name!("body")

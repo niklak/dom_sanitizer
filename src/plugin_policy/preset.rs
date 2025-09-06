@@ -8,7 +8,7 @@ pub struct LocalNameMatcher(pub LocalName);
 impl NodeChecker for LocalNameMatcher {
     fn is_match(&self, node: &NodeRef) -> bool {
         node.qual_name_ref()
-            .map_or(false, |qual_name| self.0 == qual_name.local)
+            .is_some_and(|qual_name| self.0 == qual_name.local)
     }
 }
 
@@ -28,7 +28,7 @@ pub struct LocalNamesMatcher(pub Vec<LocalName>);
 impl NodeChecker for LocalNamesMatcher {
     fn is_match(&self, node: &NodeRef) -> bool {
         node.qual_name_ref()
-            .map_or(false, |qual_name| self.0.contains(&qual_name.local))
+            .is_some_and(|qual_name| self.0.contains(&qual_name.local))
     }
 }
 
@@ -59,7 +59,7 @@ impl AttrChecker for AttrMatcher {
         // Only proceed if node's local name matches the element scope
         if !node
             .qual_name_ref()
-            .map_or(false, |name| &name.local == element_scope)
+            .is_some_and(|name| &name.local == element_scope)
         {
             return false;
         }
@@ -96,10 +96,7 @@ pub struct NsAttrMatcher {
 impl AttrChecker for NsAttrMatcher {
     fn is_match_attr(&self, node: &NodeRef, attr: &Attribute) -> bool {
         // Only proceed if node's namespace matches the element scope
-        if !node
-            .qual_name_ref()
-            .map_or(false, |name| name.ns == self.ns)
-        {
+        if !node.qual_name_ref().is_some_and(|name| name.ns == self.ns) {
             return false;
         }
         self.attr_names.contains(&attr.name.local)
@@ -144,6 +141,6 @@ impl NamespaceMatcher {
 
 impl NodeChecker for NamespaceMatcher {
     fn is_match(&self, node: &NodeRef) -> bool {
-        node.qual_name_ref().map_or(false, |name| name.ns == self.0)
+        node.qual_name_ref().is_some_and(|name| name.ns == self.0)
     }
 }
