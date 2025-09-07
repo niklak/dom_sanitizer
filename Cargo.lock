@@ -31,7 +31,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "bench"
-version = "0.2.4"
+version = "0.3.0"
 dependencies = [
  "criterion",
  "dom_query",
@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "dom_sanitizer"
-version = "0.2.4"
+version = "0.3.0"
 dependencies = [
  "dom_query",
  "html5ever",
