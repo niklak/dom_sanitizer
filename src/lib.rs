@@ -6,6 +6,7 @@ pub mod directives;
 mod dom_helpers;
 pub mod plugin_policy;
 pub mod policy;
+pub mod re_exports;
 pub mod traits;
 
 pub(crate) mod macros;
