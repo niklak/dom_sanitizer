@@ -3,6 +3,14 @@
 All notable changes to the `dom_sanitizer` crate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.4.0] - 2025-10-20
+
+### Added
+- Re-exported `dom_query` crate for convenience (by @michael-eddy).
+
+### Changed
+- Updated `dom_query` dependency version from 0.22.0 to 0.23.1
+
 ## [0.3.0] - 2025-09-07
 
 ### Changed

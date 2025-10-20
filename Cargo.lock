@@ -31,7 +31,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "bench"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "criterion",
  "dom_query",
@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "dom_sanitizer"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "dom_query",
  "html5ever",
@@ -615,9 +615,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.12.1"
+version = "1.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a52d8d02cacdb176ef4678de6c052efb4b3da14b78e4db683a4252762be5433"
+checksum = "843bc0191f75f3e22651ae5f1e72939ab2f72a4bc30fa80a066bd66edefc24d4"
 dependencies = [
  "aho-corasick",
  "memchr",
