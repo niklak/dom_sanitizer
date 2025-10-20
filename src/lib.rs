@@ -6,6 +6,7 @@ pub mod directives;
 mod dom_helpers;
 pub mod plugin_policy;
 pub mod policy;
+/// Re-exports of commonly used types from dependencies for convenience.
 pub mod re_exports;
 pub mod traits;
 
