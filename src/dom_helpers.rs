@@ -21,9 +21,8 @@ pub(crate) fn next_child_or_sibling<'a>(
         }
         if let Some(next_sibling) = parent_node.next_element_sibling() {
             return Some(next_sibling);
-        } else {
-            parent = parent_node.parent()
         }
+        parent = parent_node.parent();
     }
     None
 }

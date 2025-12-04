@@ -92,7 +92,7 @@ impl<T: SanitizeDirective> SanitizePolicy for PluginPolicy<T> {
             .filter(|a| self.should_exclude_attr(node, a))
             .map(|a| a.name.local.as_ref())
             .collect();
-        exclude_fn(node, &attrs)
+        exclude_fn(node, &attrs);
     }
 
     fn is_empty(&self) -> bool {

@@ -79,7 +79,7 @@ impl<T: SanitizeDirective> SanitizePolicy for Policy<'_, T> {
             }
         }
 
-        exclude_fn(node, &attrs)
+        exclude_fn(node, &attrs);
     }
 }
 
