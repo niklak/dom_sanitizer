@@ -33,7 +33,7 @@ impl SanitizeDirective for Permissive {
 
             if let Some(first_inline) = child.first_child() {
                 child.insert_siblings_before(&first_inline);
-            };
+            }
             child.remove_from_parent();
         }
     }
@@ -87,7 +87,7 @@ impl SanitizeDirective for Restrictive {
 
             if let Some(first_inline) = child.first_child() {
                 child.insert_siblings_before(&first_inline);
-            };
+            }
             child.remove_from_parent();
         }
     }
