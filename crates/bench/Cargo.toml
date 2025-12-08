@@ -15,7 +15,7 @@ dom_sanitizer = { path = "../.." }
 dom_query = {workspace = true}
 
 [dev-dependencies]
-criterion = { version = "0.7.0", features = ["html_reports"] }
+criterion = { version = "0.8.1", features = ["html_reports"] }
 
 [[bench]]
 name = "policy"
