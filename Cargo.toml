@@ -20,7 +20,7 @@ keywords = ["html", "dom", "sanitization"]
 description = "Flexible HTML sanitization for Rust — build policies and sanitize documents easily."
 
 [workspace.dependencies]
-dom_query = {version = "0.24.0"}
+dom_query = {version = "0.25.1"}
 html5ever = {version = "0.36.1"}
 tendril = {version = "0.4.3"}
 
