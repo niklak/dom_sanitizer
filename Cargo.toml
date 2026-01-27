@@ -21,7 +21,7 @@ description = "Flexible HTML sanitization for Rust — build policies and saniti
 
 [workspace.dependencies]
 dom_query = {version = "0.25.1"}
-html5ever = {version = "0.36.1"}
+html5ever = {version = "0.38.0"}
 tendril = {version = "0.4.3"}
 
 
