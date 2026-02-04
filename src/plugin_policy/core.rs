@@ -125,7 +125,7 @@ impl<T: SanitizeDirective> PluginPolicy<T> {
 }
 
 /// Alias for [`PluginPolicy`] using the [`Permissive`] directive (default-allow behavior).
-pub type PermissivePluginPolicy<'a> = PluginPolicy<Permissive>;
+pub type PermissivePluginPolicy = PluginPolicy<Permissive>;
 
 /// Alias for [`PluginPolicy`] using the [`Restrictive`] directive (default-deny behavior).
-pub type RestrictivePluginPolicy<'a> = PluginPolicy<Restrictive>;
+pub type RestrictivePluginPolicy = PluginPolicy<Restrictive>;
