@@ -134,6 +134,8 @@ impl NamespaceMatcher {
     /// # Examples
     ///
     /// ```
+    /// use dom_sanitizer::plugin_policy::preset::NamespaceMatcher;
+    /// 
     /// let svg_matcher = NamespaceMatcher::new("http://www.w3.org/2000/svg");
     /// ```
     pub fn new(namespace: &str) -> Self {
