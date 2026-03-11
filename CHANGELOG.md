@@ -3,6 +3,14 @@
 All notable changes to the `dom_sanitizer` crate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [Unreleased]
+### Changed
+- Updated dependencies:
+    - `dom_query`: 0.25.1 -> 0.26.0
+    - `html5ever`: 0.36.1 -> 0.38.0
+    - `tendril`: 0.4.3 -> 0.5.0
+
+
 ## [0.5.0] - 2026-01-27
 
 ### Changed
